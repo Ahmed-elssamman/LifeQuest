@@ -1,0 +1,224 @@
+<lq-page-header
+  [eyebrow]="i18n.t('CURIOSITY, NOT CRITICISM', 'فضول، لا نقد')"
+  [title]="i18n.t('Your habits are an experiment.', 'عاداتك تجربة.')"
+  [description]="
+    i18n.t(
+      'When something isn’t working, learn from it. Adjust the habit to fit the human.',
+      'عندما لا ينجح شيء، تعلّم منه. عدّل العادة لتناسب الإنسان.'
+    )
+  "
+  ><a routerLink="/habits" class="btn btn-secondary"
+    ><lq-icon name="arrow-left" [size]="16" />{{ i18n.t('My habits', 'عاداتي') }}</a
+  ></lq-page-header
+>
+<div class="mb-7 grid gap-4 sm:grid-cols-3">
+  @for (
+    step of [
+      {
+        icon: 'search',
+        en: 'Notice the pattern',
+        ar: 'لاحظ النمط',
+        text: 'What is actually
+  getting in the way?',
+        textAr: 'ما الذي يعيقك حقاً؟',
+      },
+      {
+        icon: 'flask',
+        en: 'Try a smaller
+  experiment',
+        ar: 'جرّب تجربة أصغر',
+        text: 'A lighter target. A better time. A pause.',
+        textAr:
+          'هدف أخف.
+  وقت أنسب. توقف قليل.',
+      },
+      {
+        icon: 'sprout',
+        en: 'Keep what helps',
+        ar: 'احتفظ بما يساعدك',
+        text: 'Progress is
+  learning what works for you.',
+        textAr: 'التقدم هو تعلّم ما يناسبك.',
+      },
+    ];
+    track step.en
+  ) {
+    <div class="rounded-2xl bg-brand-soft p-5">
+      <lq-icon [name]="step.icon" class="mb-3 text-brand" />
+      <h2 class="text-sm font-semibold">{{ i18n.t(step.en, step.ar) }}</h2>
+      <p class="mt-2 text-xs leading-6 text-muted">{{ i18n.t(step.text, step.textAr) }}</p>
+    </div>
+  }
+</div>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid gap-5 md:grid-cols-2">
+    @for (habit of resource.data()?.items; track habit.id) {
+      <article class="card p-6">
+        <div class="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <span class="badge mb-3" [class]="'area-' + habit.area.slug">{{
+              i18n.t(habit.area.name, habit.area.nameAr)
+            }}</span>
+            <h2 class="text-lg font-semibold">{{ habit.name }}</h2>
+          </div>
+          <span class="text-lg font-semibold text-brand"
+            >{{ habit.adherence }}<span class="text-xs">%</span></span
+          >
+        </div>
+        <lq-progress [value]="habit.adherence" />
+        <p class="mt-4 text-xs leading-6 text-muted">
+          {{
+            habit.failureReason ||
+              i18n.t(
+                'Every pattern has a reason. Let’s find yours.',
+                'لكل نمط سبب.
+      لنعثر على سببك.'
+              )
+          }}
+        </p>
+        @if (habit.nextExperiment) {
+          <div class="mt-4 rounded-xl bg-mint p-4 text-xs leading-6 text-mint-ink">
+            <span class="font-semibold">{{ i18n.t('Trying now: ', 'نجرب الآن: ') }}</span
+            >{{ habit.nextExperiment }}
+          </div>
+        }
+        <button class="btn btn-secondary mt-5 w-full text-xs" (click)="diagnose(habit)">
+          <lq-icon name="flask" [size]="16" />{{
+            i18n.t('Explore an adjustment', 'استكشف تعديلاً')
+          }}
+        </button>
+        @if (habit.experiments.length) {
+          <details class="mt-4">
+            <summary class="min-h-10 cursor-pointer text-xs text-muted">
+              {{ i18n.t('Previous experiments', 'التجارب السابقة') }} ({{
+                habit.experiments.length
+              }})
+            </summary>
+            @for (experiment of habit.experiments; track experiment.id) {
+              <p class="mt-2 rounded-xl bg-canvas p-3 text-xs leading-6">
+                {{ experiment.hypothesis
+                }}<span class="block text-muted">{{ experiment.adjustment }}</span>
+              </p>
+            }
+          </details>
+        }
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="flask"
+          [title]="i18n.t('Room to learn, whenever you need it.', 'مساحة للتعلم، متى احتجتها.')"
+          [description]="
+            i18n.t(
+              'Create a habit first. Habit Lab will be here when you want to make it fit a little better.',
+              'أنشئ عادة أولاً. المختبر هنا عندما تريد جعلها أنسب لك.'
+            )
+          "
+          ><a routerLink="/habits" class="btn btn-primary">{{
+            i18n.t('Explore habits', 'استكشف العادات')
+          }}</a></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as data) {
+  <lq-pagination
+    [page]="data.page"
+    [total]="data.total"
+    [limit]="data.limit"
+    (change)="page($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('A kinder way forward', 'طريق ألطف للأمام')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '36rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <p class="mb-5 text-sm text-muted">{{ selected()?.name }}</p>
+    <lq-field id="lab-reason" [label]="i18n.t('What got in the way?', 'ما الذي أعاقك؟')"
+      ><input
+        id="lab-reason"
+        class="field"
+        formControlName="reason"
+        [placeholder]="
+          i18n.t('Too big, too late, too tired…', 'كبير جداً، متأخر، مرهق…')
+        " /></lq-field
+    ><lq-field id="lab-hypothesis" [label]="i18n.t('What might help?', 'ما الذي قد يساعد؟')"
+      ><input id="lab-hypothesis" class="field" formControlName="hypothesis" /></lq-field
+    ><lq-field id="lab-adjustment" [label]="i18n.t('My next experiment', 'تجربتي التالية')"
+      ><input
+        id="lab-adjustment"
+        class="field"
+        formControlName="adjustment"
+        [placeholder]="i18n.t('20 minutes instead of 60', '20 دقيقة بدلاً من 60')"
+    /></lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="lab-target" [label]="i18n.t('New target', 'المستهدف الجديد')"
+        ><input
+          id="lab-target"
+          type="number"
+          class="field"
+          min="0.01"
+          formControlName="target" /></lq-field
+      ><lq-field id="lab-time" [label]="i18n.t('A better time', 'وقت أنسب')"
+        ><select id="lab-time" class="field" formControlName="preferredTime">
+          <option value="morning">{{ i18n.t('Morning', 'صباحاً') }}</option>
+          <option value="afternoon">{{ i18n.t('Afternoon', 'بعد الظهر') }}</option>
+          <option value="evening">{{ i18n.t('Evening', 'مساءً') }}</option>
+        </select></lq-field
+      >
+    </div>
+    <lq-habit-schedule
+      prefix="lab"
+      [frequency]="form.controls.frequency"
+      [scheduleDays]="form.controls.scheduleDays"
+      [weeklyTarget]="form.controls.weeklyTarget"
+    />
+    <lq-field id="lab-commitment" [label]="i18n.t('My commitment', 'التزامي')">
+      <select id="lab-commitment" class="field" formControlName="commitment">
+        <option value="flexible">
+          {{ i18n.t('Flexible, with room to adapt', 'مرن، مع مساحة للتكيف') }}
+        </option>
+        <option value="committed">
+          {{ i18n.t('A firm promise to myself', 'وعد ثابت لنفسي') }}
+        </option>
+      </select>
+    </lq-field>
+    <lq-field id="lab-minimum" [label]="i18n.t('Smallest possible step', 'أصغر خطوة ممكنة')"
+      ><input id="lab-minimum" class="field" formControlName="minimumAction" /></lq-field
+    ><lq-field id="lab-action" [label]="i18n.t('What feels right?', 'ما الذي يبدو مناسباً؟')"
+      ><select id="lab-action" class="field" formControlName="action">
+        <option value="ADJUST">{{ i18n.t('Adjust and experiment', 'عدّل وجرّب') }}</option>
+        <option value="KEEP">
+          {{ i18n.t('Keep going with what I learned', 'استمر بما تعلمته') }}
+        </option>
+        <option value="PAUSE">{{ i18n.t('Take a thoughtful pause', 'توقف بوعي') }}</option>
+        <option value="ARCHIVE">
+          {{ i18n.t('Make room for something else', 'اصنع مساحة لشيء آخر') }}
+        </option>
+      </select></lq-field
+    >
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button
+      class="btn btn-primary w-full"
+      type="submit"
+      [disabled]="
+        saving() ||
+        form.invalid ||
+        (form.controls.frequency.value === 'CUSTOM' && !form.controls.scheduleDays.value.length)
+      "
+    >
+      {{ i18n.t('Start this experiment', 'ابدأ التجربة') }}
+    </button>
+  </form></p-dialog
+>

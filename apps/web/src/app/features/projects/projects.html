@@ -1,0 +1,171 @@
+<lq-page-header
+  [eyebrow]="i18n.t('TURN INTENTION INTO ACTION', 'حوّل النية إلى فعل')"
+  [title]="i18n.t('Good things take a little work.', 'الأشياء الجيدة تحتاج قليلاً من العمل.')"
+  [description]="
+    i18n.t(
+      'Give your goals a practical home. One project, one next step.',
+      'امنح أهدافك مساحة عملية. مشروع واحد، وخطوة تالية.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New project', 'مشروع جديد') }}
+  </button></lq-page-header
+>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (project of data.items; track project.id) {
+      <article class="card p-6">
+        <div class="mb-5 flex items-center justify-between">
+          <span class="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-brand"
+            ><lq-icon name="folder" [size]="23" /></span
+          ><span
+            class="badge"
+            [class]="
+              project.status === 'COMPLETED' ? 'bg-mint text-mint-ink' : 'bg-canvas text-muted'
+            "
+            >{{ i18n.label(project.status) }}</span
+          >
+        </div>
+        <h2 class="text-lg font-semibold">{{ project.title }}</h2>
+        <p class="mt-2 min-h-10 text-xs leading-6 text-muted">{{ project.description }}</p>
+        @if (project.goal) {
+          <p class="my-4 flex items-center gap-2 text-[10px] text-brand">
+            <lq-icon name="target" [size]="13" />{{ project.goal.title }}
+          </p>
+        }
+        <div class="mb-2 mt-5 flex justify-between text-xs">
+          <span class="text-muted">{{ project.tasks.length }} {{ i18n.t('tasks', 'مهام') }}</span
+          ><span class="font-semibold">{{ project.progress.toFixed(0) }}%</span>
+        </div>
+        <lq-progress [value]="project.progress" />
+        <div class="mt-4 flex justify-between text-[10px] text-muted">
+          <span>{{
+            project.deadline
+              ? (project.deadline | date: 'MMM d')
+              : i18n.t('No deadline', 'بدون موعد')
+          }}</span
+          ><span [class.text-amber-700]="project.health === 'NEEDS_ATTENTION'">{{
+            project.health === 'NEEDS_ATTENTION'
+              ? i18n.t('Time to adjust', 'وقت التعديل')
+              : i18n.t('On track', 'على المسار')
+          }}</span>
+        </div>
+        <details class="mt-4 border-t border-line pt-3">
+          <summary class="min-h-11 cursor-pointer text-xs font-medium">
+            {{ i18n.t('Project milestones', 'مراحل المشروع') }}
+          </summary>
+          <lq-milestones
+            [projectId]="project.id"
+            [items]="project.milestones"
+            (changed)="resource.load()"
+          />
+        </details>
+        <div class="mt-5 flex flex-wrap gap-2 border-t border-line pt-4">
+          <a
+            routerLink="/tasks"
+            [queryParams]="{ project: project.id }"
+            class="btn btn-primary flex-1 text-xs"
+            >{{ i18n.t('View tasks', 'عرض المهام') }}</a
+          ><button class="btn btn-secondary text-xs" (click)="edit(project)">
+            {{ i18n.t('Edit', 'تعديل') }}</button
+          ><select
+            class="field mt-2 !min-h-9 !py-2 !text-xs"
+            [value]="project.status"
+            #projectStatus
+            (change)="status(project, projectStatus.value)"
+            [attr.aria-label]="i18n.t('Project status', 'حالة المشروع')"
+          >
+            <option value="PLANNED">{{ i18n.t('Planned', 'مخطط') }}</option>
+            <option value="ACTIVE">{{ i18n.t('Active', 'نشط') }}</option>
+            <option value="PAUSED">{{ i18n.t('Paused', 'متوقف مؤقتاً') }}</option>
+            <option value="COMPLETED">{{ i18n.t('Completed', 'مكتمل') }}</option>
+            <option value="ARCHIVED">{{ i18n.t('Archived', 'مؤرشف') }}</option>
+          </select>
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="folder"
+          [title]="i18n.t('Make something meaningful.', 'اصنع شيئاً ذا معنى.')"
+          [description]="
+            i18n.t(
+              'A project connects your bigger goal to the work you can do today.',
+              'المشروع يربط هدفك الأكبر بالعمل الذي تستطيع إنجازه اليوم.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Start a project', 'ابدأ مشروعاً') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+  <lq-pagination [page]="data.page" [total]="data.total" (change)="page($event)" />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Shape your project', 'شكّل مشروعك')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field id="project-title" [label]="i18n.t('Project title', 'اسم المشروع')"
+      ><input id="project-title" class="field" formControlName="title" /></lq-field
+    ><lq-field id="project-description" [label]="i18n.t('What will you create?', 'ماذا ستصنع؟')">
+      <textarea
+        id="project-description"
+        class="field"
+        rows="3"
+        formControlName="description"
+      ></textarea></lq-field
+    ><lq-field id="project-goal" [label]="i18n.t('Linked goal (optional)', 'هدف مرتبط (اختياري)')"
+      ><select id="project-goal" class="field" formControlName="goalId">
+        <option value="">{{ i18n.t('Independent project', 'مشروع مستقل') }}</option>
+        @for (goal of goals.data()?.items; track goal.id) {
+          <option [value]="goal.id">{{ goal.title }}</option>
+        }
+      </select></lq-field
+    ><lq-field
+      id="project-deadline"
+      [label]="i18n.t('Deadline (optional)', 'الموعد النهائي (اختياري)')"
+      ><input id="project-deadline" type="date" class="field" formControlName="deadline"
+    /></lq-field>
+    <details class="mb-5 rounded-xl border border-line p-4">
+      <summary class="min-h-11 cursor-pointer text-sm font-medium">
+        {{ i18n.t('More planning options', 'خيارات تخطيط إضافية') }}
+      </summary>
+      <lq-field
+        id="project-start"
+        [label]="i18n.t('Start date (optional)', 'تاريخ البدء (اختياري)')"
+      >
+        <input id="project-start" class="field" type="date" formControlName="startDate" />
+      </lq-field>
+      <lq-field id="project-priority" [label]="i18n.t('Priority', 'الأولوية')">
+        <select id="project-priority" class="field" formControlName="priority">
+          <option value="LOW">{{ i18n.t('Low', 'منخفضة') }}</option>
+          <option value="MEDIUM">{{ i18n.t('Medium', 'متوسطة') }}</option>
+          <option value="HIGH">{{ i18n.t('High', 'عالية') }}</option>
+        </select>
+      </lq-field>
+      <lq-field id="project-notes" [label]="i18n.t('Private notes', 'ملاحظات خاصة')">
+        <textarea id="project-notes" class="field" rows="3" formControlName="notes"></textarea>
+      </lq-field>
+    </details>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <div class="flex justify-end gap-2 border-t border-line pt-4">
+      <button type="button" class="btn btn-secondary" (click)="discard.close(false, open, form)">
+        {{ i18n.t('Cancel', 'إلغاء') }}</button
+      ><button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid">
+        {{ i18n.t('Save project', 'حفظ المشروع') }}
+      </button>
+    </div>
+  </form></p-dialog
+>

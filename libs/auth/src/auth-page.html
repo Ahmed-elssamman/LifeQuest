@@ -1,0 +1,210 @@
+<div class="grid min-h-screen bg-surface lg:grid-cols-2">
+  <div class="flex flex-col px-6 py-8 sm:px-14 lg:px-16 xl:px-24">
+    <a routerLink="/" class="w-fit"><lq-logo /></a>
+    <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-16">
+      <p class="eyebrow mb-4 text-brand">
+        {{
+          i18n.t(
+            isAdmin ? 'LIFEQUEST ADMINISTRATION' : 'YOUR SPACE TO GROW',
+            isAdmin
+              ? 'إدارة رحلة
+        التوازن'
+              : 'مساحتك للنمو'
+          )
+        }}
+      </p>
+      <h1 class="text-3xl font-semibold leading-tight tracking-tight">{{ title() }}</h1>
+      <p class="mb-8 mt-3 text-sm leading-relaxed text-muted">
+        {{
+          i18n.t(
+            'A little intention. A little progress. A life that feels more like you.',
+            'قليل
+        من النية. قليل من التقدم. وحياة تشبهك أكثر.'
+          )
+        }}
+      </p>
+      @if (mode() === 'register' && notice()) {
+        <p class="mb-5 rounded-xl bg-brand-soft p-4 text-xs leading-6 text-muted">{{ notice() }}</p>
+      }
+      <form (ngSubmit)="submit()" [formGroup]="form" class="space-y-2">
+        @if (
+          capabilities.data()?.emailDelivery === false &&
+          (mode() === 'register' || mode() === 'forgot-password')
+        ) {
+          <p role="status" class="mb-4 rounded-xl bg-brand-soft p-4 text-sm leading-6 text-muted">
+            {{
+              i18n.t(
+                'Email verification and password recovery are currently unavailable. Keep your password safe.',
+                'تأكيد البريد واستعادة كلمة المرور غير متاحين حالياً. احتفظ بكلمة مرورك بأمان.'
+              )
+            }}
+          </p>
+        }
+        @if (mode() === 'register') {
+          <lq-field id="displayName" [label]="i18n.t('Your name', 'اسمك')"
+            ><input
+              class="field"
+              id="displayName"
+              formControlName="displayName"
+              autocomplete="name"
+              [placeholder]="i18n.t('How should we call you?', 'بماذا نناديك؟')"
+          /></lq-field>
+        }
+        @if (mode() === 'login' || mode() === 'register' || mode() === 'forgot-password') {
+          <lq-field id="email" [label]="i18n.t('Email address', 'البريد الإلكتروني')"
+            ><input
+              class="field"
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              dir="ltr"
+          /></lq-field>
+        }
+        @if (mode() === 'login' || mode() === 'register' || mode() === 'reset-password') {
+          <lq-field
+            id="password"
+            [label]="i18n.t('Password', 'كلمة المرور')"
+            [hint]="
+              mode() === 'register'
+                ? i18n.t(
+                    'At least 12 characters. Make it uniquely yours.',
+                    '12 حرفاً على الأقل. اجعلها خاصة بك.'
+                  )
+                : ''
+            "
+            ><input
+              class="field"
+              id="password"
+              type="password"
+              formControlName="password"
+              [autocomplete]="mode() === 'login' ? 'current-password' : 'new-password'"
+          /></lq-field>
+        }
+        @if (mode() === 'login') {
+          <div class="pb-4 text-end">
+            <a routerLink="/auth/forgot-password" class="text-xs font-medium text-brand">{{
+              i18n.t('Forgot password?', 'نسيت كلمة المرور؟')
+            }}</a>
+          </div>
+        }
+        @if (error()) {
+          <p role="alert" class="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{{ error() }}</p>
+        }
+        @if (success()) {
+          <p role="status" class="rounded-xl bg-mint p-4 text-sm leading-relaxed text-mint-ink">
+            {{ success() }}
+          </p>
+          <a routerLink="/auth/login" class="btn btn-secondary w-full">{{
+            i18n.t('Back to sign in', 'العودة لتسجيل الدخول')
+          }}</a>
+        } @else {
+          <button
+            class="btn btn-primary mt-3 w-full"
+            type="submit"
+            [disabled]="
+              busy() ||
+              (mode() === 'forgot-password' && capabilities.data()?.emailDelivery !== true)
+            "
+          >
+            {{
+              busy()
+                ? i18n.t('One moment…', 'لحظة من فضلك…')
+                : mode() === 'register'
+                  ? i18n.t(
+                      'Begin
+          my journey',
+                      'ابدأ رحلتي'
+                    )
+                  : mode() === 'forgot-password'
+                    ? i18n.t('Send recovery link', 'أرسل رابط الاستعادة')
+                    : mode() === 'verify-email'
+                      ? i18n.t(
+                          'Verify my email',
+                          'تأكيد
+          بريدي'
+                        )
+                      : mode() === 'reset-password'
+                        ? i18n.t('Save new password', 'حفظ كلمة المرور')
+                        : i18n.t('Step back in', 'تابع رحلتك')
+            }}<lq-icon name="arrow-right" [size]="17" />
+          </button>
+        }
+      </form>
+      @if (!isAdmin && (mode() === 'login' || mode() === 'register')) {
+        <p class="mt-7 text-center text-xs text-muted">
+          {{
+            mode() === 'register'
+              ? i18n.t('Already on the journey?', 'بدأت الرحلة بالفعل؟')
+              : i18n.t('New here?', 'جديد هنا؟')
+          }}
+          <a
+            [routerLink]="mode() === 'register' ? '/auth/login' : '/auth/register'"
+            class="font-semibold text-brand"
+            >{{
+              mode() === 'register'
+                ? i18n.t('Sign in', 'تسجيل الدخول')
+                : i18n.t(
+                    'Create your
+          account',
+                    'أنشئ حسابك'
+                  )
+            }}</a
+          >
+        </p>
+      }
+    </div>
+    <p class="text-center text-[11px] text-muted">
+      {{ i18n.t('Progress beats perfection. Always.', 'التقدم أهم من الكمال. دائماً.') }}
+    </p>
+  </div>
+  <aside
+    class="relative hidden flex-col justify-center overflow-hidden bg-[#292440] p-16 text-white lg:flex"
+  >
+    <div class="absolute -end-32 -top-24 size-[500px] rounded-full border border-white/10"></div>
+    <div class="absolute -end-16 -top-8 size-[370px] rounded-full border border-white/10"></div>
+    <div class="absolute bottom-8 start-8 size-64 rounded-full bg-violet-500/10 blur-3xl"></div>
+    <div class="relative mx-auto max-w-sm">
+      <span
+        class="mb-8 inline-flex rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-violet-200"
+        >رحلة التوازن</span
+      >
+      <h2 class="text-5xl font-medium leading-[1.15] tracking-tight">
+        {{ i18n.t('Build a life.', 'ابنِ حياة.') }}<br /><span class="text-[#bfb1fa]">{{
+          i18n.t('Not just a streak.', 'بخطوات تشبهك.')
+        }}</span>
+      </h2>
+      <p class="mt-6 text-sm leading-7 text-white/60">
+        {{
+          i18n.t(
+            'Your goals, habits, and little everyday wins. Finally, in one place that sees the
+        whole you.',
+            'أهدافك وعاداتك وانتصاراتك اليومية الصغيرة. أخيراً، في مكان واحد يهتم بك ككل.'
+          )
+        }}
+      </p>
+      <div class="mt-12 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div class="flex items-center gap-3">
+          <span class="flex size-10 items-center justify-center rounded-xl bg-mint text-mint-ink"
+            ><lq-icon name="sprout"
+          /></span>
+          <div>
+            <p class="text-sm font-medium">
+              {{ i18n.t('Small is a perfectly good start.', 'البداية الصغيرة بداية رائعة.') }}
+            </p>
+            <p class="mt-1 text-xs text-white/50">
+              {{
+                i18n.t(
+                  'Two minutes count. Showing up counts.',
+                  'دقيقتان تُحسبان. والمحاولة
+              تُحسب.'
+                )
+              }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>

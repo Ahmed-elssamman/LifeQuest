@@ -1,0 +1,345 @@
+@for (announcement of announcements.data()?.slice(0, 1); track announcement.id) {
+  <aside class="mb-5 rounded-xl border border-brand/20 bg-brand-soft p-4">
+    <h2 class="text-sm font-semibold text-brand">{{ announcement.title }}</h2>
+    <p class="mt-1 text-xs leading-6 text-muted">{{ announcement.body }}</p>
+  </aside>
+}
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="animate-enter">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow mb-2">
+          {{ i18n.t('A NEW DAY, A LITTLE POSSIBILITY', 'يوم جديد، وإمكانية جديدة') }}
+        </p>
+        <h1 class="page-title">
+          {{ i18n.t('Good to see you, ', 'سعداء بوجودك، ') }}{{ firstName() }}
+          <span class="inline-block text-2xl text-amber-500">✦</span>
+        </h1>
+        <p class="mt-2 text-xs text-muted sm:text-sm">
+          {{ i18n.t('Let’s make a little room for what matters.', 'لنصنع مساحة صغيرة لما يهمك.') }}
+        </p>
+      </div>
+      <a routerLink="/today" class="btn btn-secondary text-xs"
+        ><lq-icon name="calendar" [size]="15" />{{ i18n.t('My daily plan', 'خطتي اليومية')
+        }}<lq-icon name="arrow-up-right" [size]="15"
+      /></a>
+    </div>
+    <section class="relative mb-6 overflow-hidden rounded-2xl bg-[#302943] p-6 text-white sm:p-8">
+      <div
+        class="pointer-events-none absolute -end-14 -top-32 size-[360px] rounded-full border border-white/[0.06]"
+      ></div>
+      <div
+        class="pointer-events-none absolute -end-1 -top-20 size-[250px] rounded-full border border-white/[0.08]"
+      ></div>
+      <div class="relative flex items-center justify-between gap-6">
+        <div>
+          <span
+            class="mb-4 inline-flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.18em] text-[#c3b6f2]"
+            ><span class="size-1.5 rounded-full bg-[#bba8ff]"></span
+            >{{
+              i18n.t(
+                'YOUR JOURNEY, YOUR
+          PACE',
+                'رحلتك، بإيقاعك'
+              )
+            }}</span
+          >
+          <h2 class="text-2xl font-medium leading-snug tracking-tight sm:text-[29px]">
+            {{ i18n.t('Small steps.', 'خطوات صغيرة.') }}
+            <span class="text-[#c8bafa]">{{ i18n.t('A life in balance.', 'حياة متوازنة.') }}</span>
+          </h2>
+          <p class="mt-3 max-w-lg text-xs leading-6 text-white/55">
+            {{
+              i18n.t(
+                'You don’t have to do it all today. Just take the next meaningful step.',
+                'ليس
+          عليك إنجاز كل شيء اليوم. فقط اتخذ الخطوة التالية ذات المعنى.'
+              )
+            }}
+          </p>
+          <a
+            routerLink="/today"
+            class="mt-5 inline-flex min-h-9 items-center gap-2 rounded-lg bg-white px-4 py-2 text-[11px] font-semibold text-[#302943]"
+            >{{ i18n.t('Let’s start today', 'لنبدأ اليوم')
+            }}<lq-icon name="arrow-right" [size]="14"
+          /></a>
+        </div>
+        <div class="relative hidden size-36 shrink-0 items-center justify-center sm:flex">
+          <svg viewBox="0 0 160 160" class="size-36" aria-hidden="true">
+            <circle cx="80" cy="80" r="64" fill="none" stroke="#5a4f72" stroke-width="1" />
+            <circle
+              cx="80"
+              cy="80"
+              r="47"
+              fill="none"
+              stroke="#5a4f72"
+              stroke-width="1"
+              stroke-dasharray="3 6"
+            />
+            <path
+              d="M80 111V63M80 89C49 89 47 67 47 67c27-4 33 22 33 22ZM80 75c27 0 34-29 34-29-26 0-34 29-34 29Z"
+              fill="#bfaef4"
+              stroke="#bfaef4"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <circle cx="128" cy="37" r="5" fill="#cfe8d9" />
+            <path d="m35 107 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" fill="#d3c5f9" />
+          </svg>
+        </div>
+      </div>
+    </section>
+    <div class="mb-7 grid gap-3 sm:grid-cols-3 sm:gap-5">
+      <lq-stat
+        [label]="i18n.t('Your journey score', 'درجة رحلتك')"
+        [value]="data.journey.score"
+        suffix="/ 100"
+        icon="compass"
+      /><lq-stat
+        [label]="i18n.t('XP you’ve earned', 'خبرة اكتسبتها')"
+        [value]="data.xp.earned"
+        suffix="XP"
+        icon="zap"
+        tone="bg-amber-50 text-amber-700"
+      /><lq-stat
+        [label]="i18n.t('Habits today', 'عادات اليوم')"
+        [value]="data.completedHabits + ' / ' + data.habitCount"
+        [suffix]="i18n.t('done', 'تمت')"
+        icon="sprout"
+        tone="bg-mint text-mint-ink"
+      />
+    </div>
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,1fr)]">
+      <div class="min-w-0 space-y-6">
+        <section class="card p-5 sm:p-6">
+          <lq-section-title
+            [title]="i18n.t('A little progress, today', 'قليل من التقدم، اليوم')"
+            link="/today"
+            [linkLabel]="i18n.t('View today', 'عرض اليوم')"
+          />
+          <div class="mb-2 flex items-center justify-between text-[10px] text-muted">
+            <span>{{ i18n.t('YOUR DAILY RHYTHM', 'إيقاعك اليومي') }}</span
+            ><span
+              >{{ data.completedHabits }} {{ i18n.t('of', 'من') }} {{ data.habitCount }}
+              {{ i18n.t('completed', 'مكتملة') }}</span
+            >
+          </div>
+          <lq-progress
+            [value]="data.habitCount ? (data.completedHabits / data.habitCount) * 100 : 0"
+            color="bg-mint-ink"
+          />
+          <div class="mt-2 divide-y divide-line">
+            @for (habit of data.habits.slice(0, 4); track habit.id) {
+              <lq-habit-row
+                [habit]="habit"
+                [busy]="busy() === habit.id"
+                (complete)="complete(habit.id, $event)"
+              />
+            } @empty {
+              <div class="py-8 text-center">
+                <p class="text-sm text-muted">
+                  {{ i18n.t('A tiny habit is a good place to begin.', 'عادة صغيرة بداية جيدة.') }}
+                </p>
+                <a routerLink="/habits" class="btn btn-primary mt-4 text-xs">{{
+                  i18n.t('Build my first habit', 'ابنِ عادتي الأولى')
+                }}</a>
+              </div>
+            }
+          </div>
+          <a
+            routerLink="/habit-lab"
+            class="mt-3 flex items-center gap-2 rounded-xl bg-canvas px-3 py-3 text-[10px] leading-5 text-muted"
+            ><lq-icon name="leaf" [size]="15" /><span>{{
+              i18n.t(
+                'A busy day? The smallest version of your habit still counts.',
+                'يوم مزدحم؟
+            أصغر نسخة من عادتك تُحسب أيضاً.'
+              )
+            }}</span></a
+          >
+        </section>
+        <section>
+          <lq-section-title
+            [title]="i18n.t('Your life, in balance', 'حياتك، بتوازن')"
+            link="/analytics"
+            [linkLabel]="i18n.t('Explore insights', 'اكتشف الرؤى')"
+          />
+          <div class="grid grid-cols-2 gap-3 sm:gap-4">
+            @for (area of data.areas; track area.id) {
+              <a
+                routerLink="/habits"
+                class="card p-4 transition-colors hover:border-brand/30 sm:p-5"
+                ><div class="mb-4 flex items-center justify-between">
+                  <span
+                    class="flex size-9 items-center justify-center rounded-xl"
+                    [class]="'area-' + area.slug"
+                    ><lq-icon [name]="area.icon" [size]="19" /></span
+                  ><span class="text-lg font-semibold"
+                    >{{ area.adherence }}<span class="text-xs font-normal text-muted">%</span></span
+                  >
+                </div>
+                <p class="text-xs font-semibold">{{ i18n.t(area.name, area.nameAr) }}</p>
+                <p class="mb-4 mt-1 text-[10px] text-muted">
+                  {{ area.habits }} {{ i18n.t('habits · last 14 days', 'عادات · آخر 14 يوماً') }}
+                </p>
+                <lq-progress
+                  [value]="area.adherence ?? 0"
+                  [color]="
+                    area.slug === 'growth'
+                      ? 'bg-mint-ink'
+                      : area.slug === 'body'
+                        ? 'bg-orange-400'
+                        : area.slug === 'mind'
+                          ? 'bg-sky-400'
+                          : 'bg-brand'
+                  "
+              /></a>
+            }
+          </div>
+        </section>
+        <section class="card p-5 sm:p-6">
+          <lq-section-title
+            [title]="i18n.t('The bigger picture', 'الصورة الأكبر')"
+            link="/goals"
+            [linkLabel]="i18n.t('All goals', 'كل الأهداف')"
+          />
+          <div class="space-y-5">
+            @for (goal of data.goals.slice(0, 2); track goal.id) {
+              <a routerLink="/goals" class="block"
+                ><div class="mb-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-medium">{{ goal.title }}</p>
+                    <p class="mt-1 text-[10px] text-muted">
+                      {{ i18n.t(goal.area.name, goal.area.nameAr) }}
+                    </p>
+                  </div>
+                  <span class="text-xs font-semibold text-brand"
+                    >{{ goal.progress.toFixed(0) }}%</span
+                  >
+                </div>
+                <lq-progress [value]="goal.progress"
+              /></a>
+            } @empty {
+              <p class="text-sm text-muted">
+                {{
+                  i18n.t(
+                    'What would make this season meaningful?',
+                    'ما الذي يجعل هذا الموسم ذا معنى؟'
+                  )
+                }}
+                <a routerLink="/goals" class="text-brand">{{
+                  i18n.t('Choose a goal', 'اختر هدفاً')
+                }}</a>
+              </p>
+            }
+          </div>
+        </section>
+      </div>
+      <div class="min-w-0 space-y-6">
+        <section class="card p-5 sm:p-6">
+          <div class="mb-5 flex items-center justify-between">
+            <p class="eyebrow">{{ i18n.t('YOUR NEXT CHAPTER', 'فصلك القادم') }}</p>
+            <lq-icon name="sparkles" class="text-brand" [size]="17" />
+          </div>
+          <div class="flex items-center gap-4">
+            <lq-ring [value]="data.xp.level.progress" [size]="90"
+              ><span class="text-[10px] text-muted">{{ i18n.t('LEVEL', 'مستوى') }}</span
+              ><span class="block text-3xl font-semibold leading-8">{{
+                data.xp.level.current.number
+              }}</span></lq-ring
+            >
+            <div>
+              <h2 class="text-sm font-semibold">
+                {{ i18n.t(data.xp.level.current.title, data.xp.level.current.titleAr) }}
+              </h2>
+              <p class="mt-1.5 text-[11px] leading-5 text-muted">
+                {{ data.xp.level.remaining }} XP<br />{{
+                  i18n.t(
+                    'to your next level',
+                    'لمستواك
+              التالي'
+                  )
+                }}
+              </p>
+            </div>
+          </div>
+          <a
+            routerLink="/achievements"
+            class="mt-5 flex items-center justify-between border-t border-line pt-4 text-[11px] font-medium text-brand"
+            >{{ i18n.t('See your achievements', 'شاهد إنجازاتك')
+            }}<lq-icon name="arrow-right" [size]="14"
+          /></a>
+        </section>
+        @if (activeQuest(); as quest) {
+          <section class="rounded-2xl border border-violet-200/60 bg-brand-soft p-5 sm:p-6">
+            <div class="mb-4 flex items-center justify-between">
+              <span class="eyebrow text-brand">{{
+                i18n.t('THIS WEEK’S QUEST', 'مهمة هذا الأسبوع')
+              }}</span
+              ><lq-icon name="flag" class="text-brand" [size]="18" />
+            </div>
+            <h2 class="text-lg font-semibold leading-snug">{{ quest.title }}</h2>
+            <p class="mt-2 text-xs leading-6 text-muted">{{ quest.description }}</p>
+            <div class="my-4"><lq-progress [value]="quest.progress" /></div>
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-muted"
+                >{{ i18n.t('Until', 'حتى') }} {{ quest.deadline | date: 'MMM d' }}</span
+              ><span class="flex items-center gap-1 font-semibold text-brand"
+                ><lq-icon name="zap" [size]="13" />{{ quest.xpReward }} XP</span
+              >
+            </div>
+            <a routerLink="/quests" class="btn btn-primary mt-5 w-full text-xs"
+              >{{ i18n.t('Continue my quest', 'تابع مهمتي')
+              }}<lq-icon name="arrow-right" [size]="15"
+            /></a>
+          </section>
+        }
+        <section class="card p-5 sm:p-6">
+          <div class="mb-3 flex items-center gap-2">
+            <lq-icon name="sun" class="text-amber-600" [size]="20" />
+            <h2 class="text-sm font-semibold">{{ i18n.t('A moment for you', 'لحظة لك') }}</h2>
+          </div>
+          <p class="text-xs leading-6 text-muted">
+            {{
+              data.checkedIn
+                ? i18n.t(
+                    'You made space to reflect today. That matters.',
+                    'خصصت وقتاً
+          للتأمل اليوم. وهذا مهم.'
+                  )
+                : i18n.t(
+                    'How are you, really? Check in with yourself. It only
+          takes a minute.',
+                    'كيف حالك حقاً؟ تواصل مع نفسك. لن يستغرق الأمر سوى دقيقة.'
+                  )
+            }}
+          </p>
+          <a routerLink="/today" fragment="check-in" class="btn btn-secondary mt-4 w-full text-xs"
+            >{{
+              data.checkedIn
+                ? i18n.t('View today', 'عرض اليوم')
+                : i18n.t(
+                    'Daily check-in',
+                    'تأمل
+          اليوم'
+                  )
+            }}<lq-icon name="arrow-right" [size]="14"
+          /></a>
+        </section>
+        <p class="px-5 text-center text-[10px] leading-5 text-muted">
+          {{
+            i18n.t(
+              '“You are allowed to be both a masterpiece and a work in progress.”',
+              '«يحق لك أن
+        تكون رائعاً، وأن تكون في طور النمو أيضاً.»'
+            )
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+}

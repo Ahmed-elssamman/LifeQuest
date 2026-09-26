@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "../../dist/api",
+    "rootDir": "../..",
+    "types": ["node"],
+    "sourceMap": true,
+    "emitDecoratorMetadata": false
+  },
+  "include": ["src/**/*.ts", "../../libs/domain/src/**/*.ts", "../../libs/contracts/src/**/*.ts"],
+  "exclude": ["**/*.spec.ts"]
+}

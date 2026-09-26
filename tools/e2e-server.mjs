@@ -1,0 +1,132 @@
+import { config } from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+import { execFileSync, spawn } from 'node:child_process';
+import { request } from 'node:http';
+import { resolve } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import express from 'express';
+config({ quiet: true });
+const source = process.env.TEST_DATABASE_URL;
+if (!source) throw new Error('TEST_DATABASE_URL is required.');
+const url = new URL(source);
+if (!['localhost', '127.0.0.1'].includes(url.hostname) || !url.pathname.endsWith('_test'))
+  throw new Error('E2E requires a dedicated local test database.');
+const admin = new PrismaClient({ datasources: { db: { url: source } } });
+const name = 'lifequest_e2e_test';
+if (!(await admin.$queryRaw`SELECT 1 FROM pg_database WHERE datname = ${name}`).length)
+  await admin.$executeRawUnsafe(`CREATE DATABASE "${name}"`);
+await admin.$disconnect();
+url.pathname = '/' + name;
+const credentials = {
+  email: 'explorer@e2e.test',
+  password: randomBytes(18).toString('base64url'),
+  adminEmail: 'admin@e2e.test',
+  adminPassword: randomBytes(18).toString('base64url'),
+};
+mkdirSync('.local', { recursive: true, mode: 0o700 });
+writeFileSync('.local/e2e-credentials.json', JSON.stringify(credentials), { mode: 0o600 });
+const env = {
+  ...process.env,
+  DATABASE_URL: url.href,
+  DIRECT_URL: url.href,
+  NODE_ENV: 'test',
+  PORT: '3433',
+  WEB_ORIGIN: 'http://localhost:4300',
+  ADMIN_ORIGIN: 'http://localhost:4301',
+  APP_URL: 'http://localhost:4300',
+  DEMO_EMAIL: credentials.email,
+  DEMO_PASSWORD: credentials.password,
+  DEMO_ADMIN_EMAIL: credentials.adminEmail,
+  DEMO_ADMIN_PASSWORD: credentials.adminPassword,
+};
+try {
+  execFileSync('node_modules/.bin/prisma', ['migrate', 'deploy'], { env, stdio: 'pipe' });
+} catch {
+  throw new Error('Isolated E2E migrations failed.');
+}
+const db = new PrismaClient({ datasources: { db: { url: url.href } } });
+const tables =
+  await db.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
+if (tables.length)
+  await db.$executeRawUnsafe(
+    `TRUNCATE ${tables.map((row) => '"' + row.tablename.replaceAll('"', '""') + '"').join(',')} CASCADE`,
+  );
+await db.$disconnect();
+try {
+  execFileSync('node_modules/.bin/tsx', ['prisma/seed.ts'], { env, stdio: 'pipe' });
+} catch {
+  throw new Error('Isolated E2E seed failed.');
+}
+const api = spawn('node', ['dist/api/apps/api/src/main.js'], {
+  env,
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+api.stdout.on('data', () => {});
+api.stderr.on('data', () => {});
+const servers = [];
+for (const [application, port] of [
+  ['web', 4300],
+  ['admin', 4301],
+]) {
+  const app = express();
+  app.use('/api', (req, res) => {
+    const upstream = request(
+      {
+        hostname: '127.0.0.1',
+        port: 3433,
+        method: req.method,
+        path: req.originalUrl,
+        headers: req.headers,
+      },
+      (response) => {
+        res.writeHead(response.statusCode ?? 502, response.headers);
+        response.pipe(res);
+      },
+    );
+    upstream.on('error', () => res.status(502).end());
+    req.pipe(upstream);
+  });
+  const browser = resolve('dist', application, 'browser');
+  app.use(express.static(browser, { index: false }));
+  app.use((_req, res) =>
+    res.sendFile(resolve(browser, application === 'web' ? 'index.csr.html' : 'index.html')),
+  );
+  servers.push(app.listen(port, 'localhost'));
+}
+let ready = false;
+let stopping = false;
+function stop(code = 0) {
+  if (stopping) return;
+  stopping = true;
+  api.kill('SIGTERM');
+  for (const server of servers) server.close();
+  setTimeout(() => process.exit(code), 500);
+}
+process.on('SIGTERM', () => stop());
+process.on('SIGINT', () => stop());
+api.on('exit', () => {
+  if (!stopping) {
+    console.error('The isolated test API stopped. Rebuild the API and check its configuration.');
+    stop(1);
+  }
+});
+for (let attempt = 0; attempt < 100 && !stopping; attempt++) {
+  if (api.exitCode !== null) break;
+  try {
+    ready = (
+      await fetch('http://localhost:4300/api/health', {
+        signal: globalThis.AbortSignal.timeout(1000),
+      })
+    ).ok;
+    if (ready) break;
+  } catch {
+    /* Allow API bootstrap to complete within the bounded startup window. */
+  }
+  await new Promise((resolve) => setTimeout(resolve, 100));
+}
+if (ready) console.log('Isolated E2E applications ready at ports 4300 and 4301.');
+else {
+  console.error('The isolated test API did not become healthy.');
+  stop(1);
+}

@@ -1,0 +1,308 @@
+<lq-page-header
+  [eyebrow]="i18n.t('SMALL ACTIONS. LASTING CHANGE.', 'خطوات صغيرة. تغيير دائم.')"
+  [title]="i18n.t('Find your everyday rhythm.', 'اعثر على إيقاعك اليومي.')"
+  [description]="
+    i18n.t(
+      'Build habits that fit your life, with room for the days that don’t go to plan.',
+      'ابنِ عادات تناسب حياتك، وتتسع للأيام التي لا تسير كما خططت.'
+    )
+  "
+  ><a routerLink="/habit-lab" class="btn btn-secondary"
+    ><lq-icon name="flask" [size]="17" />{{ i18n.t('Habit Lab', 'مختبر العادات') }}</a
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New habit', 'عادة جديدة') }}
+  </button></lq-page-header
+>
+<div class="mb-6 flex flex-wrap gap-2">
+  <button
+    class="btn !min-h-9 !py-2 text-xs"
+    [class]="filter() === 'all' ? 'bg-brand text-white' : 'btn-secondary'"
+    (click)="setFilter('all')"
+  >
+    {{ i18n.t('All areas', 'كل المجالات') }}
+  </button>
+  @for (area of areas.data(); track area.id) {
+    <button
+      class="btn !min-h-9 !py-2 text-xs"
+      [class]="filter() === area.id ? 'bg-brand text-white' : 'btn-secondary'"
+      (click)="setFilter(area.id)"
+    >
+      <lq-icon [name]="area.icon" [size]="14" />{{ i18n.t(area.name, area.nameAr) }}
+    </button>
+  }
+</div>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (habit of visible(); track habit.id) {
+      <article class="card flex flex-col p-6">
+        @if (habit.status !== 'ACTIVE') {
+          <p class="mb-3 text-xs text-muted">{{ i18n.label(habit.status) }}</p>
+        }
+        <div class="mb-5 flex items-center justify-between">
+          <span
+            class="flex size-11 items-center justify-center rounded-xl"
+            [class]="'area-' + habit.area.slug"
+            ><lq-icon [name]="habit.area.icon" [size]="22" /></span
+          ><span class="flex items-center gap-1 text-xs text-amber-700"
+            ><lq-icon name="flame" [size]="16" />{{ habit.streak }}
+            <span class="text-[10px] text-muted">{{
+              habit.frequency === 'WEEKLY' ? i18n.t('weeks', 'أسابيع') : i18n.t('days', 'أيام')
+            }}</span></span
+          >
+        </div>
+        <h2 class="text-lg font-semibold tracking-tight">{{ habit.name }}</h2>
+        <p class="mt-2 text-xs text-muted">
+          {{ habit.target }} {{ habit.unit }} <span class="mx-1">·</span
+          >{{
+            habit.preferredTime === 'morning'
+              ? i18n.t('Morning', 'صباحاً')
+              : habit.preferredTime === 'evening'
+                ? i18n.t('Evening', 'مساءً')
+                : i18n.t(
+                    'Afternoon',
+                    'بعد
+      الظهر'
+                  )
+          }}
+        </p>
+        <p class="mb-5 mt-3 min-h-10 text-xs leading-6 text-muted">
+          {{
+            habit.whyItMatters ||
+              habit.minimumAction ||
+              i18n.t(
+                'Small actions add up to meaningful
+      change.',
+                'الخطوات الصغيرة تصنع تغييراً ذا معنى.'
+              )
+          }}
+        </p>
+        <div class="mt-auto">
+          <div class="mb-2 flex justify-between text-[10px]">
+            <span class="text-muted">{{
+              i18n.t('Consistency · last 14 days', 'الالتزام · آخر 14 يوماً')
+            }}</span
+            ><span class="font-semibold">{{ habit.adherence }}%</span>
+          </div>
+          <lq-progress [value]="habit.adherence" color="bg-mint-ink" />
+          <div class="mt-5 grid grid-cols-7 gap-1.5">
+            @for (log of habit.logs.slice(0, 7); track log.id) {
+              <span
+                class="h-1.5 rounded-full bg-mint-ink/50"
+                [title]="log.date.slice(0, 10)"
+              ></span>
+            }
+          </div>
+          @if (habit.status === 'ACTIVE') {
+            <button
+              class="btn mt-4 w-full text-xs"
+              [class]="habit.completedToday ? 'bg-mint text-mint-ink' : 'btn-primary'"
+              [disabled]="habit.completedToday || busy() === habit.id || !habit.scheduledToday"
+              (click)="complete(habit)"
+            >
+              <lq-icon [name]="habit.completedToday ? 'check' : 'plus'" [size]="15" />{{
+                habit.completedToday
+                  ? i18n.t(
+                      'A little win, recorded',
+                      'إنجاز صغير، تم
+        تسجيله'
+                    )
+                  : !habit.scheduledToday
+                    ? i18n.t('Rest day', 'يوم راحة')
+                    : i18n.t(
+                        'Complete habit',
+                        'إتمام
+        العادة'
+                      )
+              }}
+              @if (!habit.completedToday && habit.scheduledToday) {
+                <span class="ms-auto text-[10px]">+{{ habit.xpReward }} XP</span>
+              }
+            </button>
+            @if (!habit.completedToday && habit.scheduledToday) {
+              <button
+                class="btn btn-quiet mt-1 w-full text-[11px]"
+                [disabled]="busy() === habit.id"
+                (click)="complete(habit, true)"
+              >
+                {{ i18n.t('Just the minimum today', 'الحد الأدنى يكفي اليوم') }}
+              </button>
+            }
+          }
+          <div class="mt-4 flex items-center justify-between border-t border-line pt-3">
+            <button class="btn btn-quiet !min-h-9 !px-0 text-[11px]" (click)="edit(habit)">
+              {{ i18n.t('Adjust', 'تعديل') }}</button
+            ><button class="btn btn-quiet !min-h-9 !px-0 text-[11px]" (click)="pause(habit)">
+              {{
+                habit.status === 'ACTIVE'
+                  ? i18n.t('Take a pause', 'توقف قليلاً')
+                  : i18n.t(
+                      'Begin again',
+                      'ابدأ
+          مجدداً'
+                    )
+              }}
+            </button>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="sprout"
+          [title]="i18n.t('Build your first tiny habit.', 'ابنِ أول عادة صغيرة.')"
+          [description]="
+            i18n.t(
+              'Start with something small enough to do on a busy day.',
+              'ابدأ بشيء صغير بما يكفي لفعله في يوم مزدحم.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Create a habit', 'إنشاء عادة') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+  @if (resource.data(); as data) {
+    <lq-pagination [page]="data.page" [total]="data.total" (change)="page($event)" />
+  }
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Plant a small seed', 'ازرع بذرة صغيرة')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '38rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field
+      id="habit-name"
+      [label]="i18n.t('What would you like to do regularly?', 'ماذا تود أن تفعل بانتظام؟')"
+      ><input
+        id="habit-name"
+        class="field"
+        formControlName="name"
+        [placeholder]="i18n.t('e.g. Read something meaningful', 'مثال: اقرأ شيئاً ذا معنى')"
+    /></lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="habit-area" [label]="i18n.t('Life area', 'مجال الحياة')"
+        ><select id="habit-area" class="field" formControlName="areaId">
+          @for (area of areas.data(); track area.id) {
+            <option [value]="area.id">{{ i18n.t(area.name, area.nameAr) }}</option>
+          }
+        </select></lq-field
+      >
+    </div>
+    <lq-field id="habit-goal" [label]="i18n.t('Linked goal (optional)', 'الهدف المرتبط (اختياري)')"
+      ><select id="habit-goal" class="field" formControlName="goalId">
+        <option value="">{{ i18n.t('An independent habit', 'عادة مستقلة') }}</option>
+        @for (goal of goals.data()?.items; track goal.id) {
+          <option [value]="goal.id">{{ goal.title }}</option>
+        }
+      </select></lq-field
+    >
+    <lq-habit-schedule
+      prefix="habit"
+      [frequency]="form.controls.frequency"
+      [scheduleDays]="form.controls.scheduleDays"
+      [weeklyTarget]="form.controls.weeklyTarget"
+    />
+    <div class="grid grid-cols-2 gap-4">
+      <lq-field id="habit-target" [label]="i18n.t('Target', 'المستهدف')"
+        ><input
+          id="habit-target"
+          class="field"
+          type="number"
+          min="0.01"
+          formControlName="target" /></lq-field
+      ><lq-field id="habit-unit" [label]="i18n.t('Unit', 'الوحدة')"
+        ><input
+          id="habit-unit"
+          class="field"
+          formControlName="unit"
+          [placeholder]="i18n.t('minutes, pages, times…', 'دقائق، صفحات، مرات…')"
+      /></lq-field>
+    </div>
+    <lq-field
+      id="habit-minimum"
+      [label]="i18n.t('Your tiny version', 'نسختك الصغيرة')"
+      [hint]="
+        i18n.t(
+          'For the busy days. Small minimum actions count.',
+          'للأيام المزدحمة. الخطوات الصغيرة تُحسب.'
+        )
+      "
+      ><input
+        id="habit-minimum"
+        class="field"
+        formControlName="minimumAction"
+        [placeholder]="i18n.t('e.g. Read just one page', 'مثال: اقرأ صفحة واحدة فقط')" /></lq-field
+    ><lq-field id="habit-why" [label]="i18n.t('Why it matters to you', 'لماذا يهمك')"
+      ><input id="habit-why" class="field" formControlName="whyItMatters"
+    /></lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="habit-time" [label]="i18n.t('Best time', 'أفضل وقت')"
+        ><select id="habit-time" class="field" formControlName="preferredTime">
+          <option value="morning">{{ i18n.t('Morning', 'الصباح') }}</option>
+          <option value="afternoon">{{ i18n.t('Afternoon', 'بعد الظهر') }}</option>
+          <option value="evening">{{ i18n.t('Evening', 'المساء') }}</option>
+        </select></lq-field
+      ><lq-field id="habit-difficulty" [label]="i18n.t('Effort', 'الجهد')"
+        ><select id="habit-difficulty" class="field" formControlName="difficulty">
+          <option value="EASY">{{ i18n.t('Gentle · 20 XP', 'بسيط · 20 نقطة') }}</option>
+          <option value="MEDIUM">{{ i18n.t('Steady · 30 XP', 'متوسط · 30 نقطة') }}</option>
+          <option value="HARD">{{ i18n.t('Stretch · 40 XP', 'تحدٍ · 40 نقطة') }}</option>
+        </select></lq-field
+      >
+    </div>
+    <details class="mb-5 rounded-xl border border-line p-4">
+      <summary class="min-h-11 cursor-pointer text-sm font-medium">
+        {{ i18n.t('Make this rhythm yours', 'اجعل هذا الإيقاع يناسبك') }}
+      </summary>
+      <lq-field id="habit-start" [label]="i18n.t('Start date (optional)', 'تاريخ البدء (اختياري)')">
+        <input id="habit-start" class="field" type="date" formControlName="startDate" />
+      </lq-field>
+      <lq-field id="habit-commitment" [label]="i18n.t('My commitment', 'التزامي')">
+        <select id="habit-commitment" class="field" formControlName="commitment">
+          <option value="flexible">
+            {{ i18n.t('Flexible, with room to adapt', 'مرن، مع مساحة للتكيف') }}
+          </option>
+          <option value="committed">
+            {{ i18n.t('A firm promise to myself', 'وعد ثابت لنفسي') }}
+          </option>
+        </select>
+      </lq-field>
+      <lq-field id="habit-notes" [label]="i18n.t('Private notes', 'ملاحظات خاصة')">
+        <textarea id="habit-notes" class="field" rows="3" formControlName="notes"></textarea>
+      </lq-field>
+      @if (editing()) {
+        <lq-field id="habit-status" [label]="i18n.t('Status', 'الحالة')">
+          <select id="habit-status" class="field" formControlName="status">
+            <option value="ACTIVE">{{ i18n.t('Active', 'نشط') }}</option>
+            <option value="PAUSED">{{ i18n.t('Paused', 'متوقف مؤقتاً') }}</option>
+            <option value="COMPLETED">{{ i18n.t('Completed', 'مكتمل') }}</option>
+            <option value="ARCHIVED">{{ i18n.t('Archived', 'مؤرشف') }}</option>
+          </select>
+        </lq-field>
+      }
+    </details>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button
+      class="btn btn-primary w-full"
+      type="submit"
+      [disabled]="
+        saving() ||
+        form.invalid ||
+        (form.controls.frequency.value === 'CUSTOM' && !form.controls.scheduleDays.value.length)
+      "
+    >
+      {{ saving() ? i18n.t('Saving…', 'جارٍ الحفظ…') : i18n.t('Save my habit', 'حفظ عادتي') }}
+    </button>
+  </form></p-dialog
+>

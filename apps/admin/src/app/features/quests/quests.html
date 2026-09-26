@@ -1,0 +1,102 @@
+<lq-page-header
+  [eyebrow]="i18n.t('THOUGHTFUL WEEKLY MISSIONS', 'مهام أسبوعية هادفة')"
+  [title]="i18n.t('Give explorers a starting point.', 'امنح المستكشفين نقطة بداية.')"
+  [description]="
+    i18n.t(
+      'Publish optional quest templates. Each explorer can adapt the steps to their own life.',
+      'انشر قوالب اختيارية للمهام الأسبوعية. يمكن لكل مستكشف تعديلها لتناسب حياته.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="edit()">
+    {{ i18n.t('New template', 'قالب جديد') }}
+  </button></lq-page-header
+>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (item of data.items; track item.id) {
+      <article class="card p-6">
+        <p class="eyebrow">{{ i18n.t(item.area.name, item.area.nameAr) }}</p>
+        <h2 class="mt-3 text-lg font-semibold">{{ i18n.t(item.title, item.titleAr) }}</h2>
+        <p class="mt-2 text-xs leading-6 text-muted">{{ item.description }}</p>
+        <ol class="my-4 list-inside list-decimal space-y-2 text-xs text-muted">
+          @for (step of item.items; track step.id) {
+            <li>{{ step.title }}</li>
+          }
+        </ol>
+        <div class="flex items-center justify-between gap-2">
+          <span class="badge bg-brand-soft text-brand">{{
+            item.active ? i18n.t('Published', 'منشور') : i18n.t('Hidden', 'مخفي')
+          }}</span
+          ><button class="btn btn-secondary text-xs" (click)="edit(item)">
+            {{ i18n.t('Edit template', 'تعديل القالب') }}
+          </button>
+        </div>
+      </article>
+    } @empty {
+      <lq-empty
+        [title]="i18n.t('A little inspiration goes a long way.', 'قليل من الإلهام يصنع فرقاً.')"
+        [description]="
+          i18n.t(
+            'Create a practical mission with a few achievable steps.',
+            'أنشئ مهمة عملية بخطوات يمكن تحقيقها.'
+          )
+        "
+      />
+    }
+  </div>
+  <lq-pagination [page]="data.page" [total]="data.total" (change)="page($event)" />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Shape a weekly mission', 'صمّم مهمة أسبوعية')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '36rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field id="template-title" [label]="i18n.t('English title', 'العنوان بالإنجليزية')"
+      ><input id="template-title" class="field" formControlName="title" /></lq-field
+    ><lq-field id="template-ar" [label]="i18n.t('Arabic title', 'العنوان بالعربية')"
+      ><input id="template-ar" dir="rtl" class="field" formControlName="titleAr" /></lq-field
+    ><lq-field id="template-description" [label]="i18n.t('Why it matters', 'لماذا يهم')">
+      <textarea id="template-description" class="field" formControlName="description"></textarea>
+    </lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="template-area" [label]="i18n.t('Life area', 'مجال الحياة')"
+        ><select id="template-area" class="field" formControlName="areaId">
+          @for (area of areas.data(); track area.id) {
+            <option [value]="area.id">{{ i18n.t(area.name, area.nameAr) }}</option>
+          }
+        </select></lq-field
+      ><lq-field id="template-difficulty" [label]="i18n.t('Effort', 'الجهد')"
+        ><select id="template-difficulty" class="field" formControlName="difficulty">
+          <option value="EASY">{{ i18n.t('Gentle', 'بسيط') }}</option>
+          <option value="MEDIUM">{{ i18n.t('Steady', 'متوسط') }}</option>
+          <option value="HARD">{{ i18n.t('Stretch', 'تحدٍ') }}</option>
+        </select></lq-field
+      >
+    </div>
+    <lq-field id="template-items" [label]="i18n.t('One step per line', 'خطوة في كل سطر')">
+      <textarea
+        id="template-items"
+        class="field"
+        rows="5"
+        formControlName="items"
+      ></textarea></lq-field
+    ><label class="mb-5 flex min-h-11 items-center gap-3 text-sm"
+      ><input type="checkbox" formControlName="active" class="accent-brand" />{{
+        i18n.t('Available to explorers', 'متاح للمستكشفين')
+      }}</label
+    >
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button type="submit" class="btn btn-primary w-full" [disabled]="saving() || form.invalid">
+      {{ i18n.t('Save template', 'حفظ القالب') }}
+    </button>
+  </form></p-dialog
+>

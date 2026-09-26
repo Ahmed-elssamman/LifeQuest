@@ -1,0 +1,209 @@
+<div class="min-h-screen bg-surface">
+  <header class="mx-auto flex h-24 max-w-7xl items-center justify-between gap-4 px-5 sm:px-10">
+    <a routerLink="/"><lq-logo /></a>
+    <nav class="flex items-center gap-2 sm:gap-7">
+      <a routerLink="/help" class="hidden text-sm text-muted sm:block">{{
+        i18n.t('How it works', 'كيف تعمل')
+      }}</a
+      ><button class="icon-button text-sm" (click)="i18n.setLanguage(i18n.rtl() ? 'en' : 'ar')">
+        {{ i18n.t('العربية', 'English') }}</button
+      ><a routerLink="/auth/login" class="btn btn-secondary">{{ i18n.t('Sign in', 'دخول') }}</a>
+    </nav>
+  </header>
+  <main>
+    <section
+      class="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-12 sm:px-10 lg:grid-cols-2 lg:pb-28 lg:pt-20"
+    >
+      <div class="animate-enter">
+        <span class="badge mb-6 rounded-full bg-brand-soft px-4 py-2 text-brand"
+          ><lq-icon name="sparkles" [size]="14" />{{
+            i18n.t(
+              'A little better, every day',
+              'أفضل
+          قليلاً، كل يوم'
+            )
+          }}</span
+        >
+        <h1 class="max-w-xl text-4xl font-semibold leading-[1.13] tracking-[-1.8px] sm:text-6xl">
+          {{ i18n.t('Make room for a life', 'اصنع مساحة لحياة') }}
+          <span class="text-brand">{{ i18n.t('that feels like you.', 'تشبهك.') }}</span>
+        </h1>
+        <p class="mt-6 max-w-md text-base leading-8 text-muted">
+          {{
+            i18n.t(
+              'Bring your goals, habits, and everyday wins together. Find your balance, one
+          small, meaningful step at a time.',
+              'اجمع أهدافك وعاداتك وانتصاراتك اليومية. اعثر على
+          توازنك، خطوة صغيرة وذات معنى في كل مرة.'
+            )
+          }}
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a routerLink="/auth/register" class="btn btn-primary px-6"
+            >{{ i18n.t('Begin your journey', 'ابدأ رحلتك')
+            }}<lq-icon name="arrow-right" [size]="18" /></a
+          ><a routerLink="/help" class="btn btn-quiet"
+            >{{ i18n.t('Take a look around', 'اكتشف الرحلة') }}<lq-icon name="compass" [size]="18"
+          /></a>
+        </div>
+        <p class="mt-5 flex items-center gap-2 text-xs text-muted">
+          <lq-icon name="shield" [size]="14" />{{
+            i18n.t(
+              'Your pace. Your privacy. Your kind of
+          progress.',
+              'إيقاعك. خصوصيتك. وتقدم يشبهك.'
+            )
+          }}
+        </p>
+      </div>
+      <div class="relative rounded-[2rem] bg-[#f0edf8] p-5 sm:p-8 dark:bg-[#28233a]">
+        <div
+          class="rounded-2xl border border-white/70 bg-surface p-5 shadow-[0_20px_70px_-30px_rgba(60,40,110,0.3)] sm:p-7"
+        >
+          <div class="mb-6 flex items-center justify-between">
+            <span class="text-sm font-semibold">{{
+              i18n.t('Your life. In balance.', 'حياتك. بتوازن.')
+            }}</span
+            ><span class="badge bg-mint text-mint-ink"
+              ><lq-icon name="leaf" [size]="13" />{{ i18n.t('Growing', 'تنمو') }}</span
+            >
+          </div>
+          <div class="rounded-2xl bg-[#302845] p-6 text-white">
+            <p class="text-[10px] uppercase tracking-widest text-white/50">
+              {{ i18n.t('TODAY IS A GOOD DAY TO BEGIN', 'اليوم يوم جيد للبداية') }}
+            </p>
+            <p class="mt-3 text-2xl font-medium">
+              {{ i18n.t('Small steps.', 'خطوات صغيرة.') }}<br /><span class="text-[#c4b8f7]">{{
+                i18n.t('Meaningful change.', 'تغيير ذو معنى.')
+              }}</span>
+            </p>
+            <div class="mt-5 flex gap-2">
+              <span class="rounded-lg bg-white/10 p-2"><lq-icon name="heart" [size]="18" /></span
+              ><span class="rounded-lg bg-white/10 p-2"><lq-icon name="sprout" [size]="18" /></span
+              ><span class="rounded-lg bg-white/10 p-2"><lq-icon name="sun" [size]="18" /></span>
+            </div>
+          </div>
+          <div class="mt-5 space-y-3">
+            @for (
+              item of [
+                {
+                  name: 'Move a little',
+                  ar: 'تحرك
+            قليلاً',
+                  icon: 'heart',
+                  done: true,
+                },
+                {
+                  name: 'Learn something new',
+                  ar: 'تعلم شيئاً
+            جديداً',
+                  icon: 'book-open',
+                  done: true,
+                },
+                {
+                  name: 'Take a moment for yourself',
+                  ar: 'خذ لحظة
+            لنفسك',
+                  icon: 'sun',
+                  done: false,
+                },
+              ];
+              track item.name
+            ) {
+              <div class="flex items-center gap-3 rounded-xl border border-line p-3.5">
+                <span class="text-brand"><lq-icon [name]="item.icon" [size]="18" /></span
+                ><span class="flex-1 text-xs font-medium">{{ i18n.t(item.name, item.ar) }}</span
+                ><span
+                  class="flex size-6 items-center justify-center rounded-full"
+                  [class]="item.done ? 'bg-mint text-mint-ink' : 'border border-line'"
+                >
+                  @if (item.done) {
+                    <lq-icon name="check" [size]="13" />
+                  }
+                </span>
+              </div>
+            }
+          </div>
+          <p class="mt-5 text-center text-[10px] text-muted">
+            {{ i18n.t('An example of your everyday journey', 'مثال على رحلتك اليومية') }}
+          </p>
+        </div>
+        <div
+          class="absolute -bottom-5 end-5 flex items-center gap-3 rounded-xl border border-line bg-surface px-5 py-4 shadow-lg sm:-end-3"
+        >
+          <span
+            class="flex size-9 items-center justify-center rounded-full bg-amber-100 text-amber-700"
+            ><lq-icon name="sparkles"
+          /></span>
+          <div>
+            <p class="text-xs font-semibold">
+              {{ i18n.t('Progress beats perfection.', 'التقدم أهم من الكمال.') }}
+            </p>
+            <p class="mt-1 text-[10px] text-muted">
+              {{ i18n.t('Every small action counts.', 'كل خطوة صغيرة تُحسب.') }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="border-y border-line bg-canvas px-5 py-16 sm:px-10">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-10 text-center">
+          <p class="eyebrow text-brand">رحلة التوازن</p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-tight">
+            {{
+              i18n.t(
+                'More than a habit tracker. A little more you.',
+                'أكثر من متتبع عادات. أقرب
+            إلى نفسك.'
+              )
+            }}
+          </h2>
+        </div>
+        <div class="grid gap-8 md:grid-cols-3">
+          @for (pillar of pillars; track pillar.title) {
+            <div class="card p-7">
+              <span
+                class="mb-5 flex size-12 items-center justify-center rounded-xl bg-brand-soft text-brand"
+                ><lq-icon [name]="pillar.icon" [size]="24"
+              /></span>
+              <h3 class="text-base font-semibold">{{ i18n.t(pillar.title, pillar.ar) }}</h3>
+              <p class="mt-3 text-sm leading-7 text-muted">
+                {{ i18n.t(pillar.text, pillar.textAr) }}
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+    <section class="px-5 py-20 text-center">
+      <span
+        class="mb-5 inline-flex size-14 items-center justify-center rounded-full bg-mint text-mint-ink"
+        ><lq-icon name="sprout" [size]="26"
+      /></span>
+      <h2 class="text-3xl font-semibold tracking-tight">
+        {{ i18n.t('You don’t need a perfect plan.', 'لا تحتاج لخطة مثالية.') }}
+      </h2>
+      <p class="mx-auto mb-7 mt-4 max-w-lg text-sm leading-7 text-muted">
+        {{
+          i18n.t(
+            'Just one thing that matters to you, and a small step you can take today. We’ll
+        help you find the next one.',
+            'فقط شيء واحد يهمك، وخطوة صغيرة تستطيع اتخاذها اليوم. سنساعدك
+        في العثور على الخطوة التالية.'
+          )
+        }}
+      </p>
+      <a routerLink="/auth/register" class="btn btn-primary px-7"
+        >{{ i18n.t('Find my first step', 'اعثر على خطوتي الأولى')
+        }}<lq-icon name="arrow-right" [size]="17"
+      /></a>
+    </section>
+  </main>
+  <footer
+    class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 border-t border-line px-5 py-8 text-xs text-muted sm:px-10"
+  >
+    <lq-logo /><span>{{ i18n.t('Made for a life in balance.', 'صُممت لحياة متوازنة.') }}</span
+    ><a routerLink="/help">{{ i18n.t('Help & philosophy', 'المساعدة والفلسفة') }}</a>
+  </footer>
+</div>

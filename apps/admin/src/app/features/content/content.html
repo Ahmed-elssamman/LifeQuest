@@ -1,0 +1,136 @@
+<lq-page-header
+  [eyebrow]="i18n.t('THOUGHTFUL PRODUCT CONTENT', 'محتوى منتج مدروس')"
+  [title]="i18n.t(definition.title, definition.ar)"
+  [description]="i18n.t(definition.description, definition.arDescription)"
+  ><button class="btn btn-primary" (click)="edit()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('Create new', 'إنشاء جديد') }}
+  </button></lq-page-header
+>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (item of resource.data()?.items; track item.id) {
+      <article class="card flex flex-col p-6">
+        <div class="mb-5 flex items-center justify-between">
+          <span class="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-brand"
+            ><lq-icon [name]="definition.icon" [size]="22" /></span
+          ><span
+            class="badge"
+            [class]="
+              item.active === false || item.published === false
+                ? 'bg-canvas text-muted'
+                : 'bg-mint text-mint-ink'
+            "
+            >{{
+              item.active === false || item.published === false
+                ? i18n.t(
+                    'Inactive',
+                    'غير
+        نشط'
+                  )
+                : i18n.t('Live', 'نشط')
+            }}</span
+          >
+        </div>
+        <h2 class="text-base font-semibold">{{ item.title }}</h2>
+        <p class="mb-4 mt-2 line-clamp-3 text-xs leading-6 text-muted">
+          {{ item.description || item.body }}
+        </p>
+        @if (item.cost) {
+          <p class="mb-4 text-sm font-semibold text-brand">{{ item.cost }} XP</p>
+        }
+        @if (item.threshold) {
+          <p class="mb-4 text-xs text-muted">
+            {{ i18n.t('Threshold', 'الحد') }}: {{ item.threshold }}
+          </p>
+        }
+        <button class="btn btn-secondary mt-auto w-full text-xs" (click)="edit(item)">
+          {{ i18n.t('Edit content', 'تعديل المحتوى') }}
+        </button>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          [icon]="definition.icon"
+          [title]="i18n.t('A thoughtful addition starts here.', 'إضافة مدروسة تبدأ هنا.')"
+          [description]="
+            i18n.t('Create useful content for the community.', 'أنشئ محتوى مفيداً للمجتمع.')
+          "
+          ><button class="btn btn-primary" (click)="edit()">
+            {{ i18n.t('Create the first item', 'إنشاء العنصر الأول') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="
+    editing() ? i18n.t('Edit content', 'تعديل المحتوى') : i18n.t('Create content', 'إنشاء محتوى')
+  "
+  [visible]="open()"
+  (visibleChange)="open.set($event)"
+  [modal]="true"
+  [style]="{ width: '38rem' }"
+  ><form [formGroup]="form" (ngSubmit)="save()">
+    @for (field of definition.fields; track field.key) {
+      @if (field.kind === 'checkbox') {
+        <label class="mb-4 flex min-h-11 items-center gap-3 text-xs"
+          ><input type="checkbox" class="size-4 accent-brand" [formControlName]="field.key" />{{
+            i18n.t(field.label, field.ar)
+          }}</label
+        >
+      } @else {
+        <lq-field
+          [id]="'content-' + field.key"
+          [label]="i18n.t(field.label, field.ar)"
+          [required]="field.required ?? false"
+        >
+          @switch (field.kind) {
+            @case ('textarea') {
+              <textarea
+                [id]="'content-' + field.key"
+                class="field"
+                rows="4"
+                [formControlName]="field.key"
+              ></textarea>
+            }
+            @case ('select') {
+              <select [id]="'content-' + field.key" class="field" [formControlName]="field.key">
+                @for (option of field.options; track option) {
+                  <option [value]="option">{{ option }}</option>
+                }
+              </select>
+            }
+            @default {
+              <input
+                [id]="'content-' + field.key"
+                [type]="field.kind === 'number' ? 'number' : 'text'"
+                class="field"
+                [formControlName]="field.key"
+              />
+            }
+          }
+        </lq-field>
+      }
+    }
+    @if (error()) {
+      <p role="alert" class="mb-4 text-xs text-rose-600">{{ error() }}</p>
+    }
+    <button class="btn btn-primary w-full" type="submit" [disabled]="saving() || form.invalid">
+      {{ i18n.t('Save content', 'حفظ المحتوى') }}
+    </button>
+  </form></p-dialog
+>

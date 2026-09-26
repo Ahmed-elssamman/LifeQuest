@@ -1,0 +1,6 @@
+{
+  "name": "utilities",
+  "projectType": "library",
+  "sourceRoot": "libs/utilities/src",
+  "tags": ["scope:shared", "type:utilities"]
+}

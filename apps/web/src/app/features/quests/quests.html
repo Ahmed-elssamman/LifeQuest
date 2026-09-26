@@ -1,0 +1,188 @@
+<lq-page-header
+  [eyebrow]="i18n.t('A LITTLE FOCUS GOES A LONG WAY', 'قليل من التركيز يصنع فرقاً')"
+  [title]="i18n.t('Give your week a mission.', 'امنح أسبوعك مهمة.')"
+  [description]="
+    i18n.t(
+      'One meaningful focus. A handful of actions. A reason to celebrate.',
+      'تركيز واحد ذو معنى. خطوات محدودة. وسبب للاحتفال.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New quest', 'مهمة أسبوعية جديدة') }}
+  </button></lq-page-header
+>
+@if (templates.data()?.length) {
+  <details class="card mb-6 p-5">
+    <summary class="min-h-10 cursor-pointer text-sm font-semibold">
+      {{ i18n.t('A little inspiration for this week', 'قليل من الإلهام لهذا الأسبوع') }}
+    </summary>
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      @for (template of templates.data(); track template.id) {
+        <button
+          class="rounded-xl border border-line p-4 text-start hover:bg-brand-soft"
+          (click)="useTemplate(template)"
+        >
+          <span class="block text-sm font-semibold">{{
+            i18n.t(template.title, template.titleAr)
+          }}</span
+          ><span class="mt-2 block text-xs leading-6 text-muted">{{ template.description }}</span>
+        </button>
+      }
+    </div>
+  </details>
+}
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid items-start gap-6 lg:grid-cols-2">
+    @for (quest of resource.data()?.items; track quest.id) {
+      <article class="card overflow-hidden">
+        <div class="bg-brand-soft p-6">
+          <div class="mb-4 flex justify-between">
+            <span class="badge bg-surface text-brand"
+              ><lq-icon name="flag" [size]="13" />{{
+                i18n.t(quest.area.name, quest.area.nameAr)
+              }}</span
+            ><span
+              class="badge"
+              [class]="quest.completedAt ? 'bg-mint text-mint-ink' : 'bg-surface text-brand'"
+              >{{
+                quest.completedAt
+                  ? i18n.t('Completed', 'مكتملة')
+                  : expired(quest)
+                    ? i18n.t(
+                        'Time to
+          reflect',
+                        'وقت التأمل'
+                      )
+                    : '+' + quest.xpReward + ' XP'
+              }}</span
+            >
+          </div>
+          <h2 class="text-xl font-semibold tracking-tight">{{ quest.title }}</h2>
+          <p class="mt-3 text-xs leading-6 text-muted">{{ quest.description }}</p>
+        </div>
+        <div class="p-6">
+          <div class="mb-2 flex justify-between text-xs">
+            <span class="text-muted">{{ i18n.t('Your progress', 'تقدمك') }}</span
+            ><span class="font-semibold text-brand">{{ quest.progress.toFixed(0) }}%</span>
+          </div>
+          <lq-progress [value]="quest.progress" />
+          <div class="my-5 divide-y divide-line">
+            @for (item of quest.items; track item.id) {
+              <button
+                class="flex min-h-14 w-full items-center gap-3 py-3 text-start"
+                [disabled]="!!item.completedAt || !!busy() || expired(quest)"
+                (click)="complete(quest, item.id)"
+              >
+                <span
+                  class="flex size-7 shrink-0 items-center justify-center rounded-lg border"
+                  [class]="item.completedAt ? 'border-mint bg-mint text-mint-ink' : 'border-line'"
+                >
+                  @if (item.completedAt) {
+                    <lq-icon name="check" [size]="15" />
+                  }</span
+                ><span class="text-xs" [class.text-muted]="!!item.completedAt">{{
+                  item.title
+                }}</span>
+              </button>
+            }
+          </div>
+          <div
+            class="flex items-center justify-between border-t border-line pt-4 text-[10px] text-muted"
+          >
+            <span class="flex items-center gap-1.5"
+              ><lq-icon name="calendar" [size]="13" />{{ quest.deadline | date: 'MMM d, y' }}</span
+            ><span class="text-brand">{{ quest.encouragement }}</span>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="flag"
+          [title]="i18n.t('What would make this a good week?', 'ما الذي يجعل هذا أسبوعاً جيداً؟')"
+          [description]="
+            i18n.t(
+              'Choose a small mission with a few clear steps. Keep it meaningful and achievable.',
+              'اختر مهمة صغيرة بخطوات واضحة. اجعلها ذات معنى وقابلة للتحقيق.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Create my first quest', 'إنشاء مهمتي الأسبوعية الأولى') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Your next weekly mission', 'مهمتك الأسبوعية القادمة')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '36rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field id="quest-title" [label]="i18n.t('Quest title', 'عنوان المهمة')"
+      ><input id="quest-title" class="field" formControlName="title" /></lq-field
+    ><lq-field id="quest-description" [label]="i18n.t('Why this week?', 'لماذا هذا الأسبوع؟')">
+      <textarea
+        id="quest-description"
+        class="field"
+        rows="2"
+        formControlName="description"
+      ></textarea>
+    </lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="quest-area" [label]="i18n.t('Life area', 'مجال الحياة')"
+        ><select id="quest-area" class="field" formControlName="areaId">
+          @for (area of areas.data(); track area.id) {
+            <option [value]="area.id">{{ i18n.t(area.name, area.nameAr) }}</option>
+          }
+        </select></lq-field
+      ><lq-field id="quest-date" [label]="i18n.t('Finish by', 'أنهيها قبل')"
+        ><input id="quest-date" type="date" class="field" formControlName="deadline"
+      /></lq-field>
+    </div>
+    <lq-field
+      id="quest-items"
+      [label]="i18n.t('Your steps — one per line', 'خطواتك — واحدة في كل سطر')"
+      [hint]="
+        i18n.t(
+          'Between 1 and 12 clear, achievable actions.',
+          'بين خطوة و12 خطوة واضحة وقابلة للتحقيق.'
+        )
+      "
+    >
+      <textarea
+        id="quest-items"
+        class="field"
+        rows="4"
+        formControlName="items"
+      ></textarea></lq-field
+    ><lq-field id="quest-effort" [label]="i18n.t('Effort', 'الجهد')"
+      ><select id="quest-effort" class="field" formControlName="difficulty">
+        <option value="EASY">{{ i18n.t('Gentle · 60 XP', 'بسيط · 60 نقطة') }}</option>
+        <option value="MEDIUM">{{ i18n.t('Steady · 100 XP', 'متوسط · 100 نقطة') }}</option>
+        <option value="HARD">{{ i18n.t('Stretch · 150 XP', 'تحدٍ · 150 نقطة') }}</option>
+      </select></lq-field
+    >
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button type="submit" class="btn btn-primary w-full" [disabled]="saving() || form.invalid">
+      {{ i18n.t('Start my quest', 'ابدأ مهمتي') }}
+    </button>
+  </form></p-dialog
+>

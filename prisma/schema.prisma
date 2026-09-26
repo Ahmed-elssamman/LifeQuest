@@ -1,0 +1,881 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  SUPPORT
+  CONTENT_MANAGER
+  ANALYST
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum WorkStatus {
+  PLANNED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProgressStrategy {
+  MANUAL
+  PROJECT
+  NUMERIC
+  MILESTONE
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+  CUSTOM
+}
+
+enum HabitStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  COMPLETED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum XpType {
+  HABIT
+  TASK
+  QUEST
+  ACHIEVEMENT
+  CHALLENGE
+  CHECK_IN
+  BONUS
+  REWARD
+  ADMIN_ADJUSTMENT
+}
+
+enum XpDirection {
+  CREDIT
+  DEBIT
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+enum ChallengeStatus {
+  DRAFT
+  INVITED
+  ACCEPTED
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ChallengeMode {
+  SCORE
+  CONSISTENCY
+  IMPROVEMENT
+  TARGET
+  STREAK
+  COOPERATIVE
+}
+
+enum ChallengeScope {
+  LIFE
+  AREA
+  HABIT
+}
+
+enum Visibility {
+  PRIVATE
+  FRIENDS
+}
+
+enum ParticipantStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+}
+
+enum FeedbackCategory {
+  BUG
+  SUGGESTION
+  UX
+  FEATURE
+  CONTENT
+  COMPLAINT
+  OTHER
+}
+
+enum FeedbackStatus {
+  SUBMITTED
+  REVIEWING
+  PLANNED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum TokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model User {
+  id                  String                 @id @default(cuid())
+  email               String                 @unique
+  passwordHash        String
+  role                Role                   @default(USER)
+  status              UserStatus             @default(ACTIVE)
+  emailVerifiedAt     DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  lastActiveAt        DateTime               @default(now())
+  profile             Profile?
+  sessions            Session[]
+  tokens              AuthToken[]
+  goals               Goal[]
+  projects            Project[]
+  tasks               Task[]
+  habits              Habit[]
+  habitLogs           HabitLog[]
+  checkIns            DailyCheckIn[]
+  quests              WeeklyQuest[]
+  journeys            MonthJourney[]
+  xp                  XPTransaction[]
+  achievements        UserAchievement[]
+  rewards             Reward[]
+  redemptions         RewardRedemption[]
+  friendshipsSent     Friendship[]           @relation("FriendshipSender")
+  friendshipsReceived Friendship[]           @relation("FriendshipReceiver")
+  challenges          Challenge[]
+  participations      ChallengeParticipant[]
+  notifications       Notification[]
+  feedback            Feedback[]
+  audits              AuditLog[]
+  events              AnalyticsEvent[]
+  areas               UserLifeArea[]
+  seasonProgress      UserProgress[]
+
+  @@index([status, createdAt])
+}
+
+model Profile {
+  id                    String     @id @default(cuid())
+  userId                String     @unique
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName           String
+  bio                   String     @default("")
+  avatarUrl             String?
+  timezone              String     @default("Africa/Cairo")
+  language              String     @default("en")
+  theme                 String     @default("system")
+  profileVisibility     Visibility @default(PRIVATE)
+  shareChallengeScore   Boolean    @default(true)
+  shareStreak           Boolean    @default(false)
+  notificationsEnabled  Boolean    @default(true)
+  reducedMotion         Boolean    @default(false)
+  preferredRoutine      String     @default("morning")
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model AuthToken {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String       @unique
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  @@index([userId, purpose])
+}
+
+model LifeArea {
+  questTemplates QuestTemplate[]
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  name           String
+  nameAr         String
+  color          String
+  icon           String
+  active         Boolean         @default(true)
+  sortOrder      Int             @default(0)
+  goals          Goal[]
+  habits         Habit[]
+  quests         WeeklyQuest[]
+  users          UserLifeArea[]
+  challenges     Challenge[]
+}
+
+model UserLifeArea {
+  userId String
+  areaId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area   LifeArea @relation(fields: [areaId], references: [id])
+
+  @@id([userId, areaId])
+}
+
+model Season {
+  id        String         @id @default(cuid())
+  title     String
+  year      Int
+  startDate DateTime       @db.Date
+  endDate   DateTime       @db.Date
+  phases    SeasonPhase[]
+  progress  UserProgress[]
+
+  @@unique([year, title])
+}
+
+model SeasonPhase {
+  id          String         @id @default(cuid())
+  seasonId    String
+  season      Season         @relation(fields: [seasonId], references: [id])
+  title       String
+  titleAr     String
+  month       Int
+  year        Int
+  description String
+  journeys    MonthJourney[]
+
+  @@unique([seasonId, year, month])
+}
+
+model UserProgress {
+  userId     String
+  seasonId   String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season     Season   @relation(fields: [seasonId], references: [id])
+  reflection String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, seasonId])
+}
+
+model Goal {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  areaId         String
+  area           LifeArea         @relation(fields: [areaId], references: [id])
+  title          String
+  description    String           @default("")
+  status         WorkStatus       @default(ACTIVE)
+  priority       Priority         @default(MEDIUM)
+  startDate      DateTime?        @db.Date
+  targetDate     DateTime?        @db.Date
+  strategy       ProgressStrategy @default(MANUAL)
+  manualProgress Float            @default(0)
+  numericTarget  Float?
+  numericValue   Float            @default(0)
+  unit           String?
+  notes          String           @default("")
+  milestones     Milestone[]
+  projects       Project[]
+  tasks          Task[]
+  habits         Habit[]
+  quests         WeeklyQuest[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId, status])
+}
+
+model Milestone {
+  id        String    @id @default(cuid())
+  goalId    String?
+  goal      Goal?     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean   @default(false)
+  dueDate   DateTime? @db.Date
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  goalId      String?
+  goal        Goal?         @relation(fields: [goalId], references: [id])
+  title       String
+  description String        @default("")
+  status      WorkStatus    @default(PLANNED)
+  priority    Priority      @default(MEDIUM)
+  startDate   DateTime?     @db.Date
+  deadline    DateTime?     @db.Date
+  notes       String        @default("")
+  tasks       Task[]
+  milestones  Milestone[]
+  quests      WeeklyQuest[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([goalId])
+}
+
+model Task {
+  id               String     @id @default(cuid())
+  userId           String
+  user             User       @relation(fields: [userId], references: [id])
+  projectId        String?
+  project          Project?   @relation(fields: [projectId], references: [id])
+  goalId           String?
+  goal             Goal?      @relation(fields: [goalId], references: [id])
+  parentId         String?
+  parent           Task?      @relation("Subtasks", fields: [parentId], references: [id])
+  children         Task[]     @relation("Subtasks")
+  title            String
+  description      String     @default("")
+  status           WorkStatus @default(PLANNED)
+  priority         Priority   @default(MEDIUM)
+  dueDate          DateTime?  @db.Date
+  startDate        DateTime?  @db.Date
+  estimatedMinutes Int?
+  labels           String[]
+  completedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([userId, status, dueDate])
+  @@index([projectId])
+}
+
+model Habit {
+  challengeSnapshots ChallengeHabitSnapshot[]
+  id                 String                   @id @default(cuid())
+  userId             String
+  user               User                     @relation(fields: [userId], references: [id])
+  areaId             String
+  area               LifeArea                 @relation(fields: [areaId], references: [id])
+  goalId             String?
+  goal               Goal?                    @relation(fields: [goalId], references: [id])
+  name               String
+  description        String                   @default("")
+  frequency          HabitFrequency           @default(DAILY)
+  scheduleDays       Int[]
+  weeklyTarget       Int                      @default(3)
+  target             Float                    @default(1)
+  unit               String                   @default("times")
+  xpReward           Int                      @default(20)
+  difficulty         Difficulty               @default(EASY)
+  preferredTime      String                   @default("morning")
+  startDate          DateTime                 @default(now()) @db.Date
+  commitment         String                   @default("flexible")
+  minimumAction      String                   @default("")
+  whyItMatters       String                   @default("")
+  failureReason      String                   @default("")
+  notes              String                   @default("")
+  nextExperiment     String                   @default("")
+  status             HabitStatus              @default(ACTIVE)
+  logs               HabitLog[]
+  experiments        HabitExperiment[]
+  quests             WeeklyQuest[]
+  participants       ChallengeParticipant[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  @@index([userId, status])
+  @@index([goalId])
+}
+
+model HabitLog {
+  id             String   @id @default(cuid())
+  habitId        String
+  habit          Habit    @relation(fields: [habitId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  date           DateTime @db.Date
+  value          Float
+  minimum        Boolean  @default(false)
+  note           String   @default("")
+  targetSnapshot Float
+  createdAt      DateTime @default(now())
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+model HabitExperiment {
+  id         String   @id @default(cuid())
+  habitId    String
+  habit      Habit    @relation(fields: [habitId], references: [id])
+  reason     String
+  hypothesis String
+  adjustment String
+  reflection String   @default("")
+  outcome    String   @default("TRYING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([habitId, createdAt])
+}
+
+model DailyCheckIn {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  date              DateTime @db.Date
+  mood              Int
+  energy            Int
+  majorWin          String   @default("")
+  difficulty        String   @default("")
+  reflection        String   @default("")
+  recoveryIntention String   @default("")
+  notes             String   @default("")
+  dayComplete       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model WeeklyQuest {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  areaId        String
+  area          LifeArea        @relation(fields: [areaId], references: [id])
+  goalId        String?
+  goal          Goal?           @relation(fields: [goalId], references: [id])
+  projectId     String?
+  project       Project?        @relation(fields: [projectId], references: [id])
+  habitId       String?
+  habit         Habit?          @relation(fields: [habitId], references: [id])
+  title         String
+  description   String          @default("")
+  xpReward      Int             @default(100)
+  realReward    String          @default("")
+  difficulty    Difficulty      @default(MEDIUM)
+  deadline      DateTime
+  encouragement String          @default("Small steps add up.")
+  reflection    String          @default("")
+  completedAt   DateTime?
+  items         QuestProgress[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([userId, deadline])
+}
+
+model QuestProgress {
+  id          String      @id @default(cuid())
+  questId     String
+  quest       WeeklyQuest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  title       String
+  completedAt DateTime?
+  sortOrder   Int         @default(0)
+
+  @@index([questId])
+}
+
+model MonthJourney {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  phaseId       String?
+  phase         SeasonPhase? @relation(fields: [phaseId], references: [id])
+  year          Int
+  month         Int
+  biggestWin    String       @default("")
+  failureReason String       @default("")
+  adjustment    String       @default("")
+  reward        String       @default("")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([userId, year, month])
+}
+
+model XPTransaction {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  type           XpType
+  source         String
+  amount         Int
+  direction      XpDirection @default(CREDIT)
+  idempotencyKey String      @unique
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Level {
+  id      String @id @default(cuid())
+  number  Int    @unique
+  title   String
+  titleAr String
+  minXp   Int    @unique
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  title       String
+  titleAr     String
+  description String
+  icon        String
+  condition   String
+  threshold   Int
+  xpReward    Int               @default(50)
+  hidden      Boolean           @default(false)
+  active      Boolean           @default(true)
+  users       UserAchievement[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  unlockedAt    DateTime    @default(now())
+
+  @@id([userId, achievementId])
+}
+
+model Reward {
+  id              String             @id @default(cuid())
+  userId          String?
+  user            User?              @relation(fields: [userId], references: [id])
+  title           String
+  description     String             @default("")
+  cost            Int
+  active          Boolean            @default(true)
+  icon            String             @default("gift")
+  category        String             @default("personal")
+  redemptionLimit Int?
+  notes           String             @default("")
+  redemptions     RewardRedemption[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([userId, active])
+}
+
+model RewardRedemption {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  rewardId       String
+  reward         Reward    @relation(fields: [rewardId], references: [id])
+  costSnapshot   Int
+  idempotencyKey String    @unique
+  refundedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  senderId    String
+  sender      User             @relation("FriendshipSender", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User             @relation("FriendshipReceiver", fields: [receiverId], references: [id])
+  pairKey     String           @unique
+  status      FriendshipStatus @default(PENDING)
+  blockedById String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([senderId, status])
+  @@index([receiverId, status])
+}
+
+model Challenge {
+  id               String                 @id @default(cuid())
+  ownerId          String
+  owner            User                   @relation(fields: [ownerId], references: [id])
+  title            String
+  description      String                 @default("")
+  scope            ChallengeScope         @default(LIFE)
+  areaId           String?
+  area             LifeArea?              @relation(fields: [areaId], references: [id])
+  mode             ChallengeMode
+  status           ChallengeStatus        @default(DRAFT)
+  visibility       Visibility             @default(PRIVATE)
+  startDate        DateTime
+  endDate          DateTime
+  activatedAt      DateTime?
+  completedAt      DateTime?
+  algorithmVersion Int                    @default(1)
+  rules            ChallengeRule?
+  metric           ChallengeMetric?
+  participants     ChallengeParticipant[]
+  scores           ChallengeScore[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([status, startDate, endDate])
+  @@index([ownerId])
+}
+
+model ChallengeRule {
+  id            String    @id @default(cuid())
+  challengeId   String    @unique
+  challenge     Challenge @relation(fields: [challengeId], references: [id])
+  target        Float     @default(7)
+  lowerIsBetter Boolean   @default(false)
+  dailyCap      Float     @default(100)
+  baselineDays  Int       @default(14)
+  frozenAt      DateTime?
+}
+
+model ChallengeMetric {
+  id          String    @id @default(cuid())
+  challengeId String    @unique
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  name        String    @default("habit completion")
+  unit        String    @default("days")
+}
+
+model ChallengeParticipant {
+  timezoneSnapshot String?
+  eligibleHabits   ChallengeHabitSnapshot[]
+  id               String                   @id @default(cuid())
+  challengeId      String
+  challenge        Challenge                @relation(fields: [challengeId], references: [id])
+  userId           String
+  user             User                     @relation(fields: [userId], references: [id])
+  habitId          String?
+  habit            Habit?                   @relation(fields: [habitId], references: [id])
+  status           ParticipantStatus        @default(INVITED)
+  baseline         Float?
+  baselineStart    DateTime?
+  baselineEnd      DateTime?
+  shareScore       Boolean                  @default(true)
+  shareProgress    Boolean                  @default(true)
+  shareStreak      Boolean                  @default(false)
+  acceptedAt       DateTime?
+  scores           ChallengeScore[]
+
+  @@unique([challengeId, userId])
+  @@index([userId, status])
+}
+
+model ChallengeScore {
+  id               String               @id @default(cuid())
+  challengeId      String
+  challenge        Challenge            @relation(fields: [challengeId], references: [id])
+  participantId    String
+  participant      ChallengeParticipant @relation(fields: [participantId], references: [id])
+  score            Float
+  progress         Float
+  streak           Int
+  evidenceHash     String
+  algorithmVersion Int
+  final            Boolean              @default(false)
+  calculatedAt     DateTime             @default(now())
+
+  @@unique([challengeId, participantId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model Feedback {
+  id          String               @id @default(cuid())
+  userId      String?
+  user        User?                @relation(fields: [userId], references: [id])
+  anonymous   Boolean              @default(false)
+  title       String
+  description String
+  category    FeedbackCategory
+  priority    Priority             @default(MEDIUM)
+  status      FeedbackStatus       @default(SUBMITTED)
+  attachments FeedbackAttachment[]
+  replies     FeedbackReply[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, category, createdAt])
+}
+
+model FeedbackReply {
+  id         String   @id @default(cuid())
+  feedbackId String
+  feedback   Feedback @relation(fields: [feedbackId], references: [id])
+  body       String
+  internal   Boolean  @default(false)
+  authorRole Role
+  createdAt  DateTime @default(now())
+}
+
+model FeedbackAttachment {
+  id         String   @id @default(cuid())
+  feedbackId String
+  feedback   Feedback @relation(fields: [feedbackId], references: [id])
+  name       String
+  mimeType   String
+  size       Int
+  storageKey String
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  requestId String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  name      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+}
+
+model HelpArticle {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  titleAr   String
+  body      String
+  bodyAr    String
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String
+  updatedAt   DateTime @updatedAt
+}
+
+model ChallengeHabitSnapshot {
+  participantId String
+  participant   ChallengeParticipant @relation(fields: [participantId], references: [id])
+  habitId       String
+  habit         Habit                @relation(fields: [habitId], references: [id])
+  target        Float
+  unit          String
+  xpReward      Int
+  frequency     HabitFrequency
+  scheduleDays  Int[]
+  weeklyTarget  Int
+  startDate     DateTime             @db.Date
+  createdAt     DateTime             @default(now())
+
+  @@id([participantId, habitId])
+  @@index([habitId])
+}
+
+model QuestTemplate {
+  id          String              @id @default(cuid())
+  title       String
+  titleAr     String
+  description String              @default("")
+  areaId      String
+  area        LifeArea            @relation(fields: [areaId], references: [id])
+  difficulty  Difficulty          @default(MEDIUM)
+  active      Boolean             @default(true)
+  items       QuestTemplateItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model QuestTemplateItem {
+  id         String        @id @default(cuid())
+  templateId String
+  template   QuestTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  title      String
+  sortOrder  Int           @default(0)
+
+  @@index([templateId])
+}
+
+// Ephemeral hashed rate-limit counters shared by serverless instances.
+model RateLimitBucket {
+  key String @id
+  hits Int
+  expiresAt DateTime
+  blockedUntil DateTime?
+  @@index([expiresAt])
+}

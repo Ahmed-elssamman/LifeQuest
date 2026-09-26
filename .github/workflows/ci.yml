@@ -1,0 +1,52 @@
+name: Validate LifeQuest
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: lifequest_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ github.run_id }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/lifequest_test
+      DIRECT_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/lifequest_test
+      TEST_DATABASE_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/lifequest_test
+      NX_DAEMON: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run format:check
+      - run: npm run security:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run test:frontend
+      - run: npm run test:integration -- --coverage
+      - run: npm run db:validate
+      - run: npm run db:check-migrations
+      - run: npm run build
+      - run: npm run test:ssr
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: playwright-report/
+          retention-days: 7

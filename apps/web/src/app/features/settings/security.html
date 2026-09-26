@@ -1,0 +1,126 @@
+<section class="card mt-6 p-6">
+  <div class="mb-5 flex items-center gap-3">
+    <lq-icon name="shield" class="text-brand" />
+    <h2 class="text-lg font-semibold">{{ i18n.t('Your account, kept safe', 'حسابك، بأمان') }}</h2>
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
+    <div>
+      <p class="text-sm font-medium">{{ i18n.t('Email verification', 'تأكيد البريد') }}</p>
+      <p class="mt-1 text-xs text-muted">
+        {{
+          auth.user()?.emailVerifiedAt
+            ? i18n.t(
+                'Your email is verified.',
+                'بريدك
+        مؤكد.'
+              )
+            : i18n.t('Confirm your email to keep your account secure.', 'أكد بريدك لحماية حسابك.')
+        }}
+      </p>
+    </div>
+    @if (!auth.user()?.emailVerifiedAt) {
+      <button
+        class="btn btn-secondary text-xs"
+        (click)="verify()"
+        [disabled]="capabilities.data()?.emailDelivery !== true"
+      >
+        {{ i18n.t('Send verification', 'أرسل التأكيد') }}
+      </button>
+      @if (capabilities.data()?.emailDelivery === false) {
+        <p class="text-xs text-muted">
+          {{ i18n.t('Email delivery is currently unavailable.', 'إرسال البريد غير متاح حالياً.') }}
+        </p>
+      }
+    } @else {
+      <span class="badge bg-mint text-mint-ink"
+        ><lq-icon name="check" [size]="13" />{{ i18n.t('Verified', 'مؤكد') }}</span
+      >
+    }
+  </div>
+  <div class="py-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h3 class="text-sm font-medium">{{ i18n.t('Active sessions', 'الجلسات النشطة') }}</h3>
+      <button class="btn btn-secondary text-xs" (click)="logoutAll()">
+        {{ i18n.t('Sign out everywhere', 'تسجيل الخروج من كل الأجهزة') }}
+      </button>
+    </div>
+    @for (session of sessions.data(); track session.id) {
+      <p class="mt-3 flex items-center gap-2 text-xs text-muted">
+        <lq-icon name="lock" [size]="13" />{{ i18n.t('Started', 'بدأت') }}
+        {{ session.createdAt | date: 'MMM d, h:mm a' }} · {{ i18n.t('Expires', 'تنتهي') }}
+        {{ session.expiresAt | date: 'h:mm a' }}
+      </p>
+    }
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+    <div>
+      <h3 class="text-sm font-medium">
+        {{ i18n.t('Take your journey with you', 'خذ رحلتك معك') }}
+      </h3>
+      <p class="mt-1 text-xs text-muted">
+        {{ i18n.t('Download a copy of your personal data.', 'نزّل نسخة من بياناتك الشخصية.') }}
+      </p>
+    </div>
+    <button class="btn btn-secondary text-xs" [disabled]="busy()" (click)="export()">
+      <lq-icon name="download" [size]="15" />{{ i18n.t('Export my data', 'تصدير بياناتي') }}
+    </button>
+  </div>
+</section>
+<section class="card mt-6 p-6">
+  <h2 class="text-sm font-semibold">{{ i18n.t('Leave when you need to', 'غادر متى احتجت') }}</h2>
+  <p class="my-3 text-xs leading-6 text-muted">
+    {{
+      i18n.t(
+        'You are in control of your account. Deleting it ends all sessions and removes your
+    profile identity and private reflections. Auditable transaction records are retained.',
+        'أنت
+    تتحكم في حسابك. حذفه ينهي الجلسات ويزيل هوية ملفك وتأملاتك الخاصة. تبقى سجلات المعاملات القابلة
+    للتدقيق.'
+      )
+    }}
+  </p>
+  <button class="btn btn-secondary text-xs text-rose-600" (click)="deleting.set(true)">
+    {{ i18n.t('Delete my account', 'حذف حسابي') }}
+  </button>
+</section>
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Delete your account', 'حذف حسابك')"
+  [visible]="deleting()"
+  (visibleChange)="deleting.set($event)"
+  [modal]="true"
+  [style]="{ width: '30rem' }"
+  ><form [formGroup]="form" (ngSubmit)="remove()">
+    <p class="mb-5 text-xs leading-6 text-muted">
+      {{
+        i18n.t(
+          'This cannot be undone. Export your data first if you want to keep a copy.',
+          'لا يمكن
+      التراجع عن هذا. صدّر بياناتك أولاً إذا أردت الاحتفاظ بنسخة.'
+        )
+      }}
+    </p>
+    <lq-field id="delete-password" [label]="i18n.t('Your password', 'كلمة مرورك')"
+      ><input
+        id="delete-password"
+        type="password"
+        class="field"
+        formControlName="password"
+        autocomplete="current-password" /></lq-field
+    ><lq-field
+      id="delete-confirmation"
+      [label]="i18n.t('Type DELETE to confirm', 'اكتب DELETE للتأكيد')"
+      ><input id="delete-confirmation" class="field" formControlName="confirmation"
+    /></lq-field>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-xs text-rose-600">{{ error() }}</p>
+    }
+    <button
+      class="btn w-full bg-rose-700 text-white"
+      type="submit"
+      [disabled]="busy() || form.invalid"
+    >
+      {{ i18n.t('Permanently delete account', 'حذف الحساب نهائياً') }}
+    </button>
+  </form></p-dialog
+>

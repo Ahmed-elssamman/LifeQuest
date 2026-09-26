@@ -1,0 +1,86 @@
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DialogModule } from 'primeng/dialog';
+import { Api, Page, errorMessage, Toasts } from '@lifequest/data-access';
+import { Preferences } from '@lifequest/utilities';
+import { Pagination, EmptyState, ErrorState, Icon, PageHeader, Skeleton } from '@lifequest/ui';
+import { applyServerValidation, FormField } from '@lifequest/forms';
+import { catalogs } from './catalogs';
+type CatalogItem = {
+  id: string;
+  title: string;
+  description?: string;
+  body?: string;
+  active?: boolean;
+  published?: boolean;
+  cost?: number;
+  threshold?: number;
+} & Record<string, string | number | boolean | null | undefined>;
+@Component({
+  selector: 'lq-admin-content',
+  imports: [
+    Pagination,
+    ReactiveFormsModule,
+    DialogModule,
+    PageHeader,
+    EmptyState,
+    ErrorState,
+    Skeleton,
+    Icon,
+    FormField,
+  ],
+  templateUrl: './content.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AdminContentPage {
+  private readonly api = inject(Api);
+  private readonly route = inject(ActivatedRoute);
+  private readonly toasts = inject(Toasts);
+  readonly i18n = inject(Preferences);
+  readonly kind = this.route.snapshot.data['kind'] as string;
+  readonly definition = catalogs[this.kind]!;
+  readonly resource = this.api.resource<Page<CatalogItem>>(`admin/${this.kind}`);
+  readonly open = signal(false);
+  readonly editing = signal<string | null>(null);
+  readonly saving = signal(false);
+  readonly error = signal('');
+  readonly form = new FormRecord<FormControl<string | number | boolean>>({});
+  constructor() {
+    for (const field of this.definition.fields)
+      this.form.addControl(
+        field.key,
+        new FormControl(field.value, {
+          nonNullable: true,
+          validators: field.required ? [Validators.required] : [],
+        }),
+      );
+  }
+  edit(item?: CatalogItem) {
+    this.editing.set(item?.id ?? null);
+    for (const field of this.definition.fields)
+      this.form.controls[field.key]!.setValue(item?.[field.key] ?? field.value);
+    this.error.set('');
+    this.open.set(true);
+  }
+  page(page: number) {
+    void this.resource.load(`admin/${this.kind}?page=${page}`);
+  }
+  async save() {
+    if (this.form.invalid) return;
+    this.saving.set(true);
+    try {
+      const id = this.editing();
+      if (id) await this.api.patch(`admin/${this.kind}/${id}`, this.form.getRawValue());
+      else await this.api.post(`admin/${this.kind}`, this.form.getRawValue());
+      this.open.set(false);
+      this.toasts.success(this.i18n.t('Content saved and audited.', 'تم حفظ المحتوى وتسجيله.'));
+      await this.resource.load();
+    } catch (error) {
+      applyServerValidation(this.form, error);
+      this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+}

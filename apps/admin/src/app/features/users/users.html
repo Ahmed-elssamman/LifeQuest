@@ -1,0 +1,103 @@
+<lq-page-header
+  [eyebrow]="i18n.t('PEOPLE, NOT JUST ACCOUNTS', 'أشخاص، وليس مجرد حسابات')"
+  [title]="i18n.t('The LifeQuest community.', 'مجتمع رحلة التوازن.')"
+  [description]="
+    i18n.t(
+      'Manage access and understand activity while respecting everyone’s private journey.',
+      'أدر الوصول وافهم النشاط مع احترام الرحلة الخاصة لكل شخص.'
+    )
+  "
+/>
+<form class="mb-6 flex flex-wrap gap-3" (ngSubmit)="find()">
+  <div class="flex min-w-0 flex-1 gap-2">
+    <input
+      class="field"
+      name="search"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      [placeholder]="i18n.t('Search name or email…', 'ابحث بالاسم أو البريد…')"
+      [attr.aria-label]="i18n.t('Search users', 'البحث عن المستخدمين')"
+    /><button type="submit" class="btn btn-primary">
+      <lq-icon name="search" [size]="17" />{{ i18n.t('Search', 'بحث') }}
+    </button>
+  </div>
+  <select
+    class="field !w-auto"
+    name="status"
+    [ngModel]="status()"
+    (ngModelChange)="status.set($event); find()"
+    [attr.aria-label]="i18n.t('Account status', 'حالة الحساب')"
+  >
+    <option value="">{{ i18n.t('All statuses', 'كل الحالات') }}</option>
+    <option value="ACTIVE">{{ i18n.t('Active', 'نشط') }}</option>
+    <option value="SUSPENDED">{{ i18n.t('Suspended', 'معلق') }}</option>
+    <option value="DELETED">{{ i18n.t('Deleted', 'محذوف') }}</option>
+  </select>
+</form>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="card overflow-hidden">
+    <p-table
+      [lqTableLabel]="i18n.t('Scrollable records', 'سجلات قابلة للتمرير')"
+      [value]="data.items"
+      [tableStyle]="{ 'min-width': '42rem' }"
+      [scrollable]="true"
+      ><ng-template #header
+        ><tr>
+          <th>{{ i18n.t('Person', 'الشخص') }}</th>
+          <th>{{ i18n.t('Access', 'الوصول') }}</th>
+          <th>{{ i18n.t('Status', 'الحالة') }}</th>
+          <th>{{ i18n.t('Joined', 'انضم') }}</th>
+          <th>{{ i18n.t('Activity', 'النشاط') }}</th>
+        </tr></ng-template
+      ><ng-template #body let-user
+        ><tr>
+          <td>
+            <a [routerLink]="'/users/' + user.id" class="flex items-center gap-3 py-2"
+              ><span
+                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand"
+                >{{ user.profile?.displayName?.charAt(0) }}</span
+              ><span
+                ><span class="block text-xs font-semibold">{{ user.profile?.displayName }}</span
+                ><span class="mt-1 block text-[10px] text-muted">{{ user.email }}</span></span
+              ></a
+            >
+          </td>
+          <td>
+            <span class="text-[10px] text-muted">{{ i18n.label(user.role) }}</span>
+          </td>
+          <td>
+            <span
+              class="badge"
+              [class]="
+                user.status === 'ACTIVE' ? 'bg-mint text-mint-ink' : 'bg-coral text-orange-700'
+              "
+              >{{ i18n.label(user.status) }}</span
+            >
+          </td>
+          <td class="text-xs text-muted">{{ user.createdAt | date: 'MMM d, y' }}</td>
+          <td class="text-xs text-muted">
+            {{ user._count.habits }} {{ i18n.t('habits', 'عادات') }} · {{ user._count.goals }}
+            {{ i18n.t('goals', 'أهداف') }}
+          </td>
+        </tr></ng-template
+      ><ng-template #emptymessage
+        ><tr>
+          <td colspan="5" class="!p-10 text-center text-sm text-muted">
+            {{
+              i18n.t(
+                'No one matches this search. Try a different name or filter.',
+                'لا توجد نتائج.
+          جرّب اسماً أو مرشحاً آخر.'
+              )
+            }}
+          </td>
+        </tr></ng-template
+      ></p-table
+    >
+  </div>
+  <lq-pagination [page]="data.page" [total]="data.total" (change)="find($event)" />
+}

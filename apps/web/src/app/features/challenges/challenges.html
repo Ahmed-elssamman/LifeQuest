@@ -1,0 +1,349 @@
+<lq-page-header
+  [eyebrow]="i18n.t('GROW ALONGSIDE EACH OTHER', 'تطوروا بجانب بعضكم')"
+  [title]="i18n.t('A little friendly momentum.', 'قليل من الحماس الودّي.')"
+  [description]="
+    i18n.t(
+      'Fair rules. Private progress. Shared encouragement. There’s more than one way to win.',
+      'قواعد عادلة. تقدم خاص. تشجيع مشترك. هناك أكثر من طريقة للفوز.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New challenge', 'تحدٍ جديد') }}
+  </button></lq-page-header
+>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid items-start gap-6 lg:grid-cols-2">
+    @for (challenge of resource.data()?.items; track challenge.id) {
+      <article class="card overflow-hidden">
+        <div class="border-b border-line bg-brand-soft p-6">
+          <div class="mb-4 flex items-center justify-between">
+            <span class="badge bg-surface text-brand"
+              ><lq-icon
+                [name]="challenge.mode === 'COOPERATIVE' ? 'users' : 'swords'"
+                [size]="14"
+              />{{ modeLabel(challenge.mode) }}</span
+            ><span class="badge bg-surface text-muted">{{ i18n.label(challenge.status) }}</span>
+          </div>
+          <h2 class="text-xl font-semibold">{{ challenge.title }}</h2>
+          <p class="mt-2 text-xs leading-6 text-muted">{{ challenge.description }}</p>
+        </div>
+        <div class="p-6">
+          @if (challenge.cooperativeProgress !== null) {
+            <p class="mb-2 text-xs font-medium">
+              {{ i18n.t('Our combined progress', 'تقدمنا المشترك') }} ·
+              {{ challenge.cooperativeProgress.toFixed(0) }}%
+            </p>
+            <lq-progress [value]="challenge.cooperativeProgress" color="bg-mint-ink" />
+          }
+          <div class="space-y-5 py-4">
+            @for (person of challenge.participants; track person.id) {
+              <div>
+                <div class="mb-2 flex items-center gap-3">
+                  <span
+                    class="flex size-9 items-center justify-center rounded-full bg-violet text-xs font-semibold text-violet-700"
+                    >{{ person.displayName.charAt(0) }}</span
+                  >
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-medium">
+                      {{ person.displayName }}
+                      @if (person.own) {
+                        <span class="text-muted">{{ i18n.t('(you)', '(أنت)') }}</span>
+                      }
+                    </p>
+                    <p class="mt-0.5 text-[10px] text-muted">
+                      {{
+                        person.status === 'INVITED'
+                          ? i18n.t(
+                              'Invitation pending',
+                              'دعوة
+                معلقة'
+                            )
+                          : person.score === null
+                            ? i18n.t('Private score', 'نقاط خاصة')
+                            : person.score +
+                              '
+                ' +
+                              i18n.t('points', 'نقطة')
+                      }}
+                    </p>
+                  </div>
+                  @if (person.progress !== null) {
+                    <span class="text-xs font-semibold text-brand"
+                      >{{ person.progress.toFixed(0) }}%</span
+                    >
+                  } @else {
+                    <lq-icon name="lock" [size]="14" class="text-muted" />
+                  }
+                </div>
+                @if (person.progress !== null) {
+                  <lq-progress [value]="person.progress" />
+                }
+              </div>
+            }
+          </div>
+          <details class="rounded-xl bg-canvas p-3">
+            <summary class="cursor-pointer text-[11px] font-medium text-muted">
+              {{ i18n.t('The rules we agreed on', 'القواعد التي اتفقنا عليها') }}
+            </summary>
+            <p class="mt-3 text-[11px] leading-6 text-muted">
+              {{ i18n.t('Target', 'المستهدف') }}: {{ challenge.rules.target }} ·
+              {{
+                i18n.t(
+                  'Daily
+          cap',
+                  'الحد اليومي'
+                )
+              }}: {{ challenge.rules.dailyCap }}<br />{{
+                i18n.t(
+                  'Rules and baselines
+          are frozen when the challenge starts. Scores are calculated from recorded
+          actions.',
+                  'القواعد وخطوط البداية تثبت عند بدء التحدي. النقاط تُحسب من الخطوات المسجلة.'
+                )
+              }}
+            </p>
+          </details>
+          <div class="mt-4 flex items-center justify-between text-[10px] text-muted">
+            <span
+              >{{ challenge.startDate | date: 'MMM d' }} –
+              {{ challenge.endDate | date: 'MMM d' }}</span
+            ><lq-icon name="shield" [size]="14" />
+          </div>
+          @if (invitation(challenge)) {
+            <div class="mt-5 flex gap-2">
+              <button class="btn btn-primary flex-1 text-xs" (click)="showAccept(challenge)">
+                {{ i18n.t('Accept invitation', 'قبول الدعوة') }}</button
+              ><button class="btn btn-secondary text-xs" (click)="action(challenge, 'decline')">
+                {{ i18n.t('Decline', 'رفض') }}
+              </button>
+            </div>
+          } @else if (
+            challenge.status === 'ACTIVE' ||
+            challenge.status === 'SCHEDULED' ||
+            challenge.status === 'ACCEPTED'
+          ) {
+            <button
+              class="btn btn-secondary mt-5 w-full text-xs"
+              (click)="action(challenge, 'refresh')"
+            >
+              <lq-icon name="refresh" [size]="14" />{{ i18n.t('Refresh progress', 'تحديث التقدم') }}
+            </button>
+          }
+          @if (
+            challenge.ownerId === auth.user()?.id &&
+            !['COMPLETED', 'CANCELLED'].includes(challenge.status)
+          ) {
+            <button class="btn btn-quiet mt-1 w-full text-[11px]" (click)="cancel(challenge)">
+              {{ i18n.t('Cancel challenge', 'إلغاء التحدي') }}
+            </button>
+          }
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="swords"
+          [title]="i18n.t('The next chapter could be shared.', 'الفصل القادم قد يكون مشتركاً.')"
+          [description]="
+            i18n.t(
+              'Invite a friend to show up alongside you. Choose encouragement over pressure.',
+              'ادعُ صديقاً ليحاول بجانبك. اختر التشجيع بدلاً من الضغط.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Start a challenge', 'ابدأ تحدياً') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('A shared reason to show up', 'سبب مشترك للمحاولة')"
+  [visible]="open()"
+  (visibleChange)="open.set($event)"
+  [modal]="true"
+  [style]="{ width: '40rem' }"
+  ><form [formGroup]="form" (ngSubmit)="save()">
+    <lq-field id="challenge-title" [label]="i18n.t('Challenge title', 'عنوان التحدي')"
+      ><input id="challenge-title" class="field" formControlName="title" /></lq-field
+    ><lq-field
+      id="challenge-mode"
+      [label]="i18n.t('How would you like to grow?', 'كيف تود أن تتطور؟')"
+      ><select id="challenge-mode" class="field" formControlName="mode">
+        @for (mode of modes; track mode.id) {
+          <option [value]="mode.id">{{ i18n.t(mode.en, mode.ar) }}</option>
+        }
+      </select></lq-field
+    ><lq-field
+      id="challenge-habit"
+      [label]="i18n.t('Focus on a habit (required for improvement)', 'ركز على عادة (مطلوب للتحسن)')"
+      ><select id="challenge-habit" class="field" formControlName="habitId">
+        <option value="">{{ i18n.t('All my habits', 'كل عاداتي') }}</option>
+        @for (habit of habits.data()?.items; track habit.id) {
+          <option [value]="habit.id">{{ habit.name }}</option>
+        }
+      </select></lq-field
+    >
+    <lq-field
+      id="challenge-area"
+      [label]="i18n.t('Focus on a life area (optional)', 'ركز على مجال (اختياري)')"
+      ><select id="challenge-area" class="field" formControlName="areaId">
+        <option value="">{{ i18n.t('All life areas', 'كل المجالات') }}</option>
+        @for (area of areas.data(); track area.id) {
+          <option [value]="area.id">{{ i18n.t(area.name, area.nameAr) }}</option>
+        }
+      </select></lq-field
+    >
+    <lq-field
+      id="challenge-start"
+      [label]="
+        i18n.t('Start time (leave empty to start now)', 'وقت البدء (اتركه فارغاً للبدء الآن)')
+      "
+      ><input id="challenge-start" class="field" type="datetime-local" formControlName="startDate"
+    /></lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="challenge-target" [label]="i18n.t('Target', 'المستهدف')"
+        ><input
+          id="challenge-target"
+          type="number"
+          min="1"
+          class="field"
+          formControlName="target" /></lq-field
+      ><lq-field id="challenge-end" [label]="i18n.t('End date', 'تاريخ الانتهاء')"
+        ><input id="challenge-end" type="date" class="field" formControlName="endDate"
+      /></lq-field>
+    </div>
+    @if (form.controls.mode.value === 'IMPROVEMENT') {
+      <label class="mb-4 flex min-h-11 items-center gap-2 text-xs"
+        ><input type="checkbox" formControlName="lowerIsBetter" class="accent-brand" />{{
+          i18n.t('Lower numbers mean improvement', 'الأرقام الأقل تعني تحسناً')
+        }}</label
+      >
+      <p class="mb-4 rounded-xl bg-brand-soft p-3 text-xs leading-6 text-muted">
+        {{
+          i18n.t(
+            'Both participants need at least seven historical logs for a reliable
+      baseline.',
+            'يحتاج المشاركان إلى سبعة سجلات سابقة على الأقل لخط بداية موثوق.'
+          )
+        }}
+      </p>
+    }
+    <fieldset>
+      <legend class="field-label">{{ i18n.t('Invite your people', 'ادعُ أصدقاءك') }}</legend>
+      <div class="space-y-2">
+        @for (friend of acceptedFriends(); track friend.id) {
+          <button
+            type="button"
+            class="flex min-h-12 w-full items-center justify-between rounded-xl border px-4 text-xs"
+            [class]="
+              invited().includes(friend.friend.id)
+                ? 'border-brand bg-brand-soft text-brand'
+                : 'border-line'
+            "
+            [attr.aria-pressed]="invited().includes(friend.friend.id)"
+            (click)="toggleFriend(friend.friend.id)"
+          >
+            {{ friend.friend.profile.displayName }}
+            @if (invited().includes(friend.friend.id)) {
+              <lq-icon name="check" [size]="16" />
+            }
+          </button>
+        } @empty {
+          <p class="rounded-xl bg-canvas p-4 text-xs leading-6 text-muted">
+            {{ i18n.t('Connect with a friend first.', 'تواصل مع صديق أولاً.') }}
+            <a routerLink="/friends" class="text-brand" (click)="open.set(false)">{{
+              i18n.t('Find my people', 'اعثر على أصدقائي')
+            }}</a>
+          </p>
+        }
+      </div>
+    </fieldset>
+    @if (error()) {
+      <p role="alert" class="mt-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button
+      class="btn btn-primary mt-6 w-full"
+      type="submit"
+      [disabled]="saving() || form.invalid || !invited().length"
+    >
+      {{ i18n.t('Send the invitation', 'أرسل الدعوة') }}
+    </button>
+  </form></p-dialog
+>
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Your progress, your boundaries', 'تقدمك، حدودك')"
+  [visible]="!!accepting()"
+  (visibleChange)="!$event && accepting.set(null)"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  ><form [formGroup]="acceptance" (ngSubmit)="accept()">
+    <p class="mb-5 text-sm text-muted">{{ accepting()?.title }}</p>
+    @if (accepting()?.scope === 'HABIT' || accepting()?.mode === 'IMPROVEMENT') {
+      <lq-field
+        id="accept-habit"
+        [label]="i18n.t('Your habit for this challenge', 'عادتك لهذا التحدي')"
+        ><select id="accept-habit" class="field" formControlName="habitId">
+          <option value="">{{ i18n.t('Choose a habit', 'اختر عادة') }}</option>
+          @for (habit of habits.data()?.items; track habit.id) {
+            <option [value]="habit.id">{{ habit.name }}</option>
+          }
+        </select></lq-field
+      >
+    }
+    @for (
+      setting of [
+        {
+          key: 'shareScore',
+          en: 'Share my challenge score',
+          ar: 'مشاركة نقاط
+    التحدي',
+        },
+        {
+          key: 'shareProgress',
+          en: 'Share my progress percentage',
+          ar: 'مشاركة نسبة
+    التقدم',
+        },
+        { key: 'shareStreak', en: 'Share my streak', ar: 'مشاركة الاستمرارية' },
+      ];
+      track setting.key
+    ) {
+      <label class="mb-2 flex min-h-12 items-center gap-3 rounded-xl border border-line p-3 text-xs"
+        ><input type="checkbox" [formControlName]="setting.key" class="size-4 accent-brand" />{{
+          i18n.t(setting.en, setting.ar)
+        }}</label
+      >
+    }
+    <p class="my-5 text-xs leading-6 text-muted">
+      {{
+        i18n.t(
+          'Exact counts, mood, journals, and private notes are never shared.',
+          'الأعداد الدقيقة
+      والمزاج واليوميات والملاحظات الخاصة لا تتم مشاركتها أبداً.'
+        )
+      }}
+    </p>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button type="submit" class="btn btn-primary w-full" [disabled]="saving()">
+      {{ i18n.t('Accept and grow together', 'اقبل وتطوروا معاً') }}
+    </button>
+  </form></p-dialog
+>

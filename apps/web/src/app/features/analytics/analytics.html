@@ -1,0 +1,144 @@
+<lq-page-header
+  [eyebrow]="i18n.t('UNDERSTAND YOUR OWN PATTERNS', 'افهم أنماطك الخاصة')"
+  [title]="i18n.t('A little perspective goes a long way.', 'قليل من التأمل يفتح آفاقاً.')"
+  [description]="
+    i18n.t(
+      'Your progress is information. Use it to find what helps, and gently adjust what doesn’t.',
+      'تقدمك معلومة. استخدمها لمعرفة ما يساعدك وتعديل ما لا يناسبك بلطف.'
+    )
+  "
+/>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="mb-6 grid gap-4 sm:grid-cols-3">
+    <lq-stat
+      [label]="i18n.t('Lifetime progress', 'تقدمك عبر الوقت')"
+      [value]="data.xp.earned"
+      suffix="XP"
+      icon="zap"
+    /><lq-stat
+      [label]="i18n.t('Moments of reflection', 'لحظات التأمل')"
+      [value]="data.checkInCount"
+      [suffix]="i18n.t('in 28 days', 'في 28 يوماً')"
+      icon="sun"
+      tone="bg-amber-50 text-amber-700"
+    /><lq-stat
+      [label]="i18n.t('Intentions to begin again', 'نوايا البداية مجدداً')"
+      [value]="data.recoveryCount"
+      icon="leaf"
+      tone="bg-mint text-mint-ink"
+    />
+  </div>
+  <section class="card mb-6 p-6">
+    <lq-section-title [title]="i18n.t('The rhythm you’re building', 'الإيقاع الذي تبنيه')" />
+    <p class="mb-3 text-xs text-muted">
+      {{
+        i18n.t(
+          'Habit actions over 28 days. Green dots mark your check-ins.',
+          'خطوات العادات خلال 28
+    يوماً. النقاط الخضراء تمثل تأملاتك.'
+        )
+      }}
+    </p>
+    @defer (on viewport) {
+      <lq-activity-chart [items]="data.activity" />
+    } @placeholder {
+      <div class="skeleton h-48"></div>
+    }
+  </section>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="card p-6">
+      <div class="mb-6 flex items-center gap-5">
+        <lq-ring [value]="data.journey.score" [size]="95"
+          ><span class="text-2xl font-semibold">{{ data.journey.score }}</span
+          ><span class="block text-[9px] text-muted">/ 100</span></lq-ring
+        >
+        <div>
+          <h2 class="text-lg font-semibold">
+            {{ i18n.t('Why this score?', 'لماذا هذه الدرجة؟') }}
+          </h2>
+          <p class="mt-2 text-xs leading-6 text-muted">
+            {{
+              i18n.t(
+                'A transparent view of your journey. A guide, never a grade.',
+                'نظرة واضحة
+          لرحلتك. دليل، وليس حكماً عليك.'
+              )
+            }}
+          </p>
+        </div>
+      </div>
+      <div class="space-y-5">
+        @for (factorItem of data.journey.contributions; track factorItem.key) {
+          <div>
+            <div class="mb-2 flex justify-between text-xs">
+              <span
+                >{{ factor(factorItem.key) }}
+                <span class="text-muted">({{ factorItem.weight * 100 }}%)</span></span
+              ><span class="font-semibold text-brand">{{
+                factorItem.contribution.toFixed(1)
+              }}</span>
+            </div>
+            <lq-progress [value]="factorItem.value" />
+          </div>
+        }
+      </div>
+    </section>
+    <div class="space-y-6">
+      <section class="card p-6">
+        <lq-section-title [title]="i18n.t('A balanced view', 'نظرة متوازنة')" />
+        <div class="space-y-5">
+          @for (area of data.areas; track area.id) {
+            <div class="flex items-center gap-3">
+              <span
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                [class]="'area-' + area.slug"
+                ><lq-icon [name]="area.icon" [size]="19"
+              /></span>
+              <div class="flex-1">
+                <div class="mb-2 flex justify-between text-xs">
+                  <span>{{ i18n.t(area.name, area.nameAr) }}</span
+                  ><span>{{ area.adherence }}%</span>
+                </div>
+                <lq-progress [value]="area.adherence ?? 0" />
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+      <section class="rounded-2xl bg-mint p-6 text-mint-ink">
+        <lq-icon name="flask" [size]="25" />
+        <h2 class="mt-3 text-base font-semibold">
+          {{ i18n.t('Something to explore', 'شيء يستحق الاستكشاف') }}
+        </h2>
+        <p class="mt-3 text-xs leading-6">
+          {{
+            data.weakestHabit
+              ? i18n.t(
+                  'Could “' +
+                    data.weakestHabit +
+                    '” use a gentler version? Try
+        changing one small thing.',
+                  'هل تحتاج «' +
+                    data.weakestHabit +
+                    '» لنسخة ألطف؟ جرّب تغيير شيء
+        صغير.'
+                )
+              : i18n.t(
+                  'Start with a tiny habit. Your patterns will become clearer over time.',
+                  'ابدأ
+        بعادة صغيرة. ستتضح أنماطك مع الوقت.'
+                )
+          }}
+        </p>
+        <a routerLink="/habit-lab" class="btn mt-4 bg-surface/70 text-xs text-mint-ink"
+          >{{ i18n.t('Explore Habit Lab', 'استكشف مختبر العادات')
+          }}<lq-icon name="arrow-right" [size]="15"
+        /></a>
+      </section>
+    </div>
+  </div>
+}

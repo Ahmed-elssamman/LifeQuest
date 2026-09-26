@@ -1,0 +1,6 @@
+{
+  "name": "contracts",
+  "projectType": "library",
+  "sourceRoot": "libs/contracts/src",
+  "tags": ["scope:shared", "type:contracts"]
+}

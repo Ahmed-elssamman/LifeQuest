@@ -1,0 +1,264 @@
+<div class="min-h-screen bg-canvas">
+  <header class="mx-auto flex flex-wrap max-w-6xl items-center justify-between gap-4 px-5 py-7">
+    <a routerLink="/"><lq-logo /></a>
+    <div class="flex items-center gap-2">
+      <button class="icon-button text-xs" (click)="i18n.setLanguage(i18n.rtl() ? 'en' : 'ar')">
+        {{ i18n.t('ع', 'EN') }}</button
+      ><a routerLink="/dashboard" class="btn btn-secondary text-xs"
+        >{{ i18n.t('My space', 'مساحتي') }}<lq-icon name="arrow-up-right" [size]="15"
+      /></a>
+    </div>
+  </header>
+  <main class="mx-auto max-w-6xl px-5 pb-20">
+    <section class="mx-auto max-w-2xl pb-10 pt-8 text-center">
+      <span class="badge !whitespace-normal bg-brand-soft px-4 py-2 text-brand"
+        ><lq-icon name="compass" [size]="14" />{{
+          i18n.t(
+            'A FIELD GUIDE TO YOUR BETTER
+        EVERYDAY',
+            'دليل ليومك الأفضل'
+          )
+        }}</span
+      >
+      <h1 class="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+        {{ i18n.t('A life in balance.', 'حياة متوازنة.') }}<br /><span class="text-brand">{{
+          i18n.t('One small step at a time.', 'خطوة صغيرة في كل مرة.')
+        }}</span>
+      </h1>
+      <p class="mt-5 text-sm leading-7 text-muted">
+        {{
+          i18n.t(
+            'LifeQuest brings the pieces of your life together. Here’s how to make it yours,
+        without trying to do everything at once.',
+            'رحلة التوازن تجمع أجزاء حياتك معاً. إليك كيف
+        تجعلها رحلتك، دون محاولة إنجاز كل شيء دفعة واحدة.'
+          )
+        }}
+      </p>
+    </section>
+    <div class="mb-6 flex justify-center">
+      <button
+        class="btn btn-secondary !whitespace-normal text-xs"
+        [attr.aria-pressed]="beginner()"
+        (click)="beginner.set(!beginner())"
+      >
+        <lq-icon [name]="beginner() ? 'sprout' : 'map'" [size]="16" />{{
+          beginner()
+            ? i18n.t(
+                'Beginner
+        mode · Show the whole journey',
+                'وضع البداية · عرض الرحلة كاملة'
+              )
+            : i18n.t(
+                'The whole journey ·
+        Keep it simple',
+                'الرحلة كاملة · بسّطها'
+              )
+        }}
+      </button>
+    </div>
+    <section class="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <nav
+        class="grid grid-cols-2 gap-2 lg:flex lg:flex-col"
+        [attr.aria-label]="i18n.t('Explore the journey', 'استكشف الرحلة')"
+      >
+        @for (step of visible(); track step.title) {
+          <button
+            class="flex items-center gap-3 rounded-xl border p-4 text-start transition-colors"
+            [class]="
+              current() === step
+                ? 'border-brand/30 bg-brand-soft text-brand'
+                : 'border-line bg-surface text-muted hover:border-brand/30'
+            "
+            [attr.aria-current]="current() === step ? 'step' : null"
+            (click)="choose(step)"
+          >
+            <lq-icon [name]="step.icon" [size]="19" /><span class="text-xs font-medium leading-5">{{
+              i18n.t(step.title, step.ar)
+            }}</span>
+          </button>
+        }
+      </nav>
+      <article class="card flex flex-col overflow-hidden">
+        <div
+          class="relative flex min-h-52 items-center justify-center overflow-hidden bg-[#302943] p-8"
+        >
+          <div class="absolute size-60 rounded-full border border-white/10"></div>
+          <div class="absolute size-40 rounded-full border border-dashed border-white/15"></div>
+          <span
+            class="relative flex size-24 items-center justify-center rounded-[28px] border border-white/20 bg-white/10 text-[#d1c4ff]"
+            ><lq-icon [name]="current().icon" [size]="44" /></span
+          ><span
+            class="absolute bottom-5 start-6 text-[10px] font-medium uppercase tracking-widest text-white/50"
+            >{{ i18n.t(current().label, current().labelAr) }}</span
+          ><span class="absolute bottom-5 end-6 text-xs text-white/50"
+            >{{ selected() + 1 }} / 12</span
+          >
+        </div>
+        <div class="flex flex-1 flex-col p-6 sm:p-9">
+          <h2 class="text-2xl font-semibold tracking-tight">
+            {{ i18n.t(current().title, current().ar) }}
+          </h2>
+          <p class="mt-4 text-sm leading-7 text-muted">
+            {{ i18n.t(current().text, current().textAr) }}
+          </p>
+          <div class="my-6 rounded-xl border-s-4 border-brand bg-brand-soft p-5 text-sm leading-7">
+            {{ i18n.t(current().example, current().exampleAr) }}
+          </div>
+          <a
+            [routerLink]="current().link"
+            class="mt-auto inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-brand"
+            >{{ i18n.t('Try this step', 'جرّب هذه الخطوة')
+            }}<lq-icon name="arrow-right" [size]="15"
+          /></a>
+        </div>
+      </article>
+    </section>
+    <section class="mt-14">
+      <div class="mb-6 text-center">
+        <p class="eyebrow text-brand">
+          {{ i18n.t('THE CONNECTIONS MAKE THE DIFFERENCE', 'الروابط تصنع الفرق') }}
+        </p>
+        <h2 class="mt-3 text-2xl font-semibold">
+          {{ i18n.t('From a little intention to real change.', 'من نية صغيرة إلى تغيير حقيقي.') }}
+        </h2>
+      </div>
+      <div
+        class="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-surface p-6"
+      >
+        @for (
+          item of [
+            {
+              icon: 'target',
+              en: 'Goal',
+              ar: 'هدف',
+              tip: 'Your meaningful
+        outcome',
+            },
+            {
+              icon: 'folder',
+              en: 'Project',
+              ar: 'مشروع',
+              tip: 'A body of
+        work',
+            },
+            {
+              icon: 'tasks',
+              en: 'Task',
+              ar: 'مهمة',
+              tip: 'One concrete
+        action',
+            },
+            {
+              icon: 'sprout',
+              en: 'Habit',
+              ar: 'عادة',
+              tip: 'A repeated
+        behavior',
+            },
+            { icon: 'sun', en: 'Reflect', ar: 'تأمل', tip: 'Learn and adjust' },
+          ];
+          track item.en;
+          let last = $last
+        ) {
+          <div
+            [pTooltip]="item.tip"
+            tabindex="0"
+            class="flex min-w-20 flex-col items-center gap-3 rounded-xl bg-canvas p-4"
+          >
+            <lq-icon [name]="item.icon" class="text-brand" [size]="22" /><span
+              class="text-xs font-medium"
+              >{{ i18n.t(item.en, item.ar) }}</span
+            >
+          </div>
+          @if (!last) {
+            <lq-icon name="arrow-right" class="text-muted" [size]="17" />
+          }
+        }
+      </div>
+    </section>
+    <section class="mt-10 rounded-2xl bg-mint p-6 text-mint-ink sm:p-9">
+      <div class="flex items-center gap-3">
+        <lq-icon name="sun" [size]="26" />
+        <h2 class="text-xl font-semibold">
+          {{ i18n.t('What should I do today?', 'ماذا أفعل اليوم؟') }}
+        </h2>
+      </div>
+      <div class="mt-6 grid gap-5 sm:grid-cols-3">
+        @for (
+          item of [
+            {
+              n: '01',
+              en: 'Choose one tiny habit.',
+              ar: 'اختر عادة صغيرة.',
+              text: 'The smallest
+        version is enough.',
+              textAr: 'أصغر نسخة تكفي.',
+            },
+            {
+              n: '02',
+              en: 'Do one meaningful task.',
+              ar: 'أنجز
+        مهمة ذات معنى.',
+              text: 'A clear next step toward your goal.',
+              textAr:
+                'خطوة واضحة نحو
+        هدفك.',
+            },
+            {
+              n: '03',
+              en: 'Take a minute to reflect.',
+              ar: 'خذ دقيقة للتأمل.',
+              text: 'Notice a win.
+        Make tomorrow easier.',
+              textAr: 'لاحظ انتصاراً. اجعل الغد أسهل.',
+            },
+          ];
+          track item.n
+        ) {
+          <div>
+            <span class="text-[10px]">{{ item.n }}</span>
+            <h3 class="mt-2 text-sm font-semibold">{{ i18n.t(item.en, item.ar) }}</h3>
+            <p class="mt-2 text-xs">{{ i18n.t(item.text, item.textAr) }}</p>
+          </div>
+        }
+      </div>
+      <a routerLink="/today" class="btn mt-7 bg-mint-ink text-white"
+        >{{ i18n.t('Take me to Today', 'انتقل إلى اليوم') }}<lq-icon name="arrow-right" [size]="17"
+      /></a>
+    </section>
+    <section class="mx-auto mt-14 max-w-3xl">
+      <h2 class="mb-6 text-center text-2xl font-semibold">
+        {{ i18n.t('A few things you might be wondering.', 'بعض الأشياء التي قد تتساءل عنها.') }}
+      </h2>
+      <div class="space-y-3">
+        @for (article of articles.data(); track article.id) {
+          <details class="card p-5">
+            <summary class="cursor-pointer text-sm font-semibold">
+              {{ i18n.t(article.title, article.titleAr) }}
+            </summary>
+            <p class="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted">
+              {{ i18n.t(article.body, article.bodyAr) }}
+            </p>
+          </details>
+        }
+        @for (faq of faqs; track faq.q) {
+          <details class="card p-5">
+            <summary class="cursor-pointer text-sm font-semibold">
+              {{ i18n.t(faq.q, faq.qa) }}
+            </summary>
+            <p class="mt-4 text-sm leading-7 text-muted">{{ i18n.t(faq.a, faq.aa) }}</p>
+          </details>
+        }
+      </div>
+      <div class="mt-10 text-center">
+        <p class="text-sm text-muted">
+          {{ i18n.t('Still finding your way? We’re here.', 'ما زلت تبحث عن طريقك؟ نحن هنا.') }}
+        </p>
+        <a routerLink="/feedback" class="btn btn-secondary mt-4"
+          >{{ i18n.t('Share your thoughts', 'شارك أفكارك') }}<lq-icon name="message" [size]="16"
+        /></a>
+      </div>
+    </section>
+  </main>
+</div>

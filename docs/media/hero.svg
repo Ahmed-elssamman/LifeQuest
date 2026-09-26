@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" role="img" aria-labelledby="title desc">
+  <title id="title">LifeQuest — small steps, meaningful change</title>
+  <desc id="desc">A lavender journey connects everyday habits to a brighter horizon, on a deep purple background.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171323"/><stop offset="1" stop-color="#34264e"/></linearGradient>
+    <linearGradient id="path" x2="1"><stop stop-color="#a998ed"/><stop offset="1" stop-color="#b8e7d1"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#9e7cef" stop-opacity=".28"/><stop offset="1" stop-color="#9e7cef" stop-opacity="0"/></radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#d3c4ff" opacity=".1"/></pattern>
+  </defs>
+  <rect width="1280" height="380" rx="24" fill="url(#bg)"/>
+  <rect width="1280" height="380" rx="24" fill="url(#dots)"/>
+  <ellipse cx="1020" cy="165" rx="340" ry="260" fill="url(#glow)"/>
+  <path d="M740 380Q855 239 997 305T1280 269V380" fill="#49365e" opacity=".4"/>
+  <path d="M858 380Q1001 290 1140 348T1280 322V380" fill="#655082" opacity=".3"/>
+  <g transform="translate(64 57)">
+    <rect width="46" height="46" rx="14" fill="#a998ed"/>
+    <g transform="translate(8 8) scale(.48)" fill="#211932"><path d="M32 0C13 0 0 13 0 32h32V0Zm7 32h25C64 13 56 0 39 0v32ZM32 39H0c0 19 13 25 32 25V39Zm7 0v25c17 0 25-10 25-25H39Z"/></g>
+    <text x="63" y="30" fill="#e3dcf7" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="4">YOUR LIFE. IN BALANCE.</text>
+  </g>
+  <text x="59" y="192" fill="#faf7ff" font-family="Arial, sans-serif" font-size="78" font-weight="700" letter-spacing="-4">LifeQuest<tspan fill="#b8e7d1">.</tspan></text>
+  <text x="64" y="238" fill="#d3c6ec" font-family="Arial, sans-serif" font-size="24">Small steps. Meaningful change.</text>
+  <g font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="2" fill="#c8bedc">
+    <text x="65" y="310">GOALS</text><circle cx="140" cy="306" r="2" fill="#b8e7d1"/>
+    <text x="162" y="310">HABITS</text><circle cx="246" cy="306" r="2" fill="#b8e7d1"/>
+    <text x="269" y="310">REFLECTION</text><circle cx="392" cy="306" r="2" fill="#b8e7d1"/>
+    <text x="415" y="310">GROWTH</text>
+  </g>
+  <path d="M740 280C798 280 747 194 834 194S891 253 951 226S956 111 1074 111" fill="none" stroke="#8b73b5" stroke-width="2" stroke-dasharray="5 8" opacity=".45"/>
+  <path d="M740 280C798 280 747 194 834 194S891 253 951 226S956 111 1074 111" fill="none" stroke="url(#path)" stroke-width="3"/>
+  <g fill="#2c223c" stroke="#b9a6ee" stroke-width="2"><circle cx="740" cy="280" r="9"/><circle cx="834" cy="194" r="12"/><circle cx="951" cy="226" r="12"/></g>
+  <path d="m829 194 4 4 7-8m106 36 4 4 7-8" fill="none" stroke="#b8e7d1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1083" cy="111" r="44" fill="#b8e7d1" opacity=".06"/><circle cx="1083" cy="111" r="30" fill="#b8e7d1" opacity=".1"/>
+  <circle cx="1083" cy="111" r="20" fill="#b8e7d1"/>
+  <path d="m1083 100 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#2c443c"/>
+  <g font-family="Arial, sans-serif" font-size="12" fill="#c2b2d9"><text x="709" y="313">BEGIN</text><text x="808" y="164">SHOW UP</text><text x="923" y="263">GROW</text><text x="1125" y="116" fill="#b8e7d1">BECOME.</text></g>
+  <g fill="#dacbf8"><circle cx="756" cy="95" r="2" opacity=".6"/><circle cx="962" cy="75" r="2" opacity=".4"/><circle cx="1162" cy="226" r="2" opacity=".5"/><path d="m892 113 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" opacity=".6"/></g>
+</svg>

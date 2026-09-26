@@ -1,0 +1,149 @@
+<lq-page-header
+  [eyebrow]="i18n.t('HELP US GROW, TOO', 'ساعدنا على النمو أيضاً')"
+  [title]="i18n.t('Your voice belongs here.', 'صوتك له مكان هنا.')"
+  [description]="
+    i18n.t(
+      'An idea, a concern, or something that could feel better. We’re listening.',
+      'فكرة أو قلق أو شيء يمكن تحسينه. نحن نستمع.'
+    )
+  "
+/>
+<div class="grid items-start gap-6 lg:grid-cols-2">
+  <section class="card p-6">
+    <div class="mb-6 flex items-center gap-3">
+      <span class="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-brand"
+        ><lq-icon name="message"
+      /></span>
+      <h2 class="text-lg font-semibold">{{ i18n.t('Share a thought', 'شارك فكرة') }}</h2>
+    </div>
+    @if (success()) {
+      <p role="status" class="mb-5 rounded-xl bg-mint p-4 text-xs leading-6 text-mint-ink">
+        {{
+          i18n.t(
+            'Thank you. Your feedback is in good hands. You can follow its progress
+      here.',
+            'شكراً لك. ملاحظاتك بين أيدٍ أمينة. يمكنك متابعة تقدمها هنا.'
+          )
+        }}
+      </p>
+    }
+    <form [formGroup]="form" [lqUnsavedForm]="form" (ngSubmit)="save()">
+      <lq-field id="feedback-category" [label]="i18n.t('What is it about?', 'ما الموضوع؟')"
+        ><select id="feedback-category" class="field" formControlName="category">
+          @for (category of categories; track category.id) {
+            <option [value]="category.id">{{ i18n.t(category.en, category.ar) }}</option>
+          }
+        </select></lq-field
+      ><lq-field id="feedback-title" [label]="i18n.t('A short title', 'عنوان قصير')"
+        ><input id="feedback-title" class="field" formControlName="title" /></lq-field
+      ><lq-field
+        id="feedback-description"
+        [label]="i18n.t('Tell us a little more', 'أخبرنا المزيد')"
+        [hint]="
+          i18n.t(
+            'At least 10 characters. Please avoid passwords or sensitive personal details.',
+            '10 أحرف على الأقل. تجنب كلمات المرور والتفاصيل الشخصية الحساسة.'
+          )
+        "
+      >
+        <textarea
+          id="feedback-description"
+          class="field"
+          rows="5"
+          formControlName="description"
+        ></textarea></lq-field
+      ><label class="mb-5 flex min-h-11 items-center gap-3 text-xs"
+        ><input type="checkbox" class="size-4 accent-brand" formControlName="anonymous" />{{
+          i18n.t('Hide my identity from the support team', 'إخفاء هويتي عن فريق الدعم')
+        }}</label
+      >
+      @if (error()) {
+        <p role="alert" class="mb-4 text-xs text-rose-600">{{ error() }}</p>
+      }
+      <button class="btn btn-primary w-full" type="submit" [disabled]="saving() || form.invalid">
+        {{ i18n.t('Send my feedback', 'إرسال ملاحظاتي') }}<lq-icon name="arrow-right" [size]="16" />
+      </button>
+    </form>
+  </section>
+  <section>
+    <lq-section-title [title]="i18n.t('Your conversations', 'محادثاتك')" />
+    @if (resource.error()) {
+      <lq-error [message]="resource.error()" (retry)="resource.load()" />
+    }
+    <div class="space-y-4">
+      @for (item of resource.data()?.items; track item.id) {
+        <article class="card p-5">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <span class="badge bg-brand-soft text-brand">{{
+              item.status.replaceAll('_', ' ').toLowerCase()
+            }}</span
+            ><span class="text-[10px] text-muted">{{ item.createdAt | date: 'MMM d' }}</span>
+          </div>
+          <h3 class="text-sm font-semibold">{{ item.title }}</h3>
+          <p class="mt-2 text-xs leading-6 text-muted">{{ item.description }}</p>
+          <div class="my-4 space-y-2">
+            @for (file of item.attachments; track file.id) {
+              <a
+                class="flex min-h-11 items-center gap-2 break-all text-xs font-medium text-brand underline"
+                [href]="'/api/feedback/' + item.id + '/attachments/' + file.id"
+                download
+                ><lq-icon name="download" [size]="16" />{{ file.name }}</a
+              >
+            }
+            @if (item.attachments.length < 3) {
+              <label class="field-label text-xs" [for]="'attachment-' + item.id">{{
+                i18n.t(
+                  'Add a screenshot (PNG or JPEG, up to 2 MB)',
+                  'إرفاق لقطة شاشة (PNG أو JPEG حتى 2 ميجابايت)'
+                )
+              }}</label
+              ><input
+                #attachmentInput
+                [id]="'attachment-' + item.id"
+                type="file"
+                class="field text-xs"
+                accept="image/png,image/jpeg"
+                [disabled]="!!uploading()"
+                (change)="attach(item.id, attachmentInput)"
+              />
+            }
+          </div>
+          @for (reply of item.replies; track reply.id) {
+            <div class="mt-4 rounded-xl bg-mint p-4 text-xs leading-6 text-mint-ink">
+              <p class="mb-1 text-[10px] font-semibold">
+                {{ i18n.t('LIFEQUEST TEAM', 'فريق رحلة التوازن') }}
+              </p>
+              {{ reply.body }}
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="card p-8 text-center">
+          <lq-icon name="message" class="mb-4 text-brand" [size]="30" />
+          <p class="text-sm font-medium">
+            {{
+              i18n.t('Every good conversation starts somewhere.', 'كل محادثة جيدة تبدأ من مكان ما.')
+            }}
+          </p>
+          <p class="mt-3 text-xs leading-6 text-muted">
+            {{
+              i18n.t(
+                'Your feedback and our replies will appear here.',
+                'ستظهر ملاحظاتك وردودنا هنا.'
+              )
+            }}
+          </p>
+        </div>
+      }
+    </div>
+  </section>
+</div>
+
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}

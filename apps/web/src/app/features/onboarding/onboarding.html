@@ -1,0 +1,170 @@
+<div class="min-h-screen bg-canvas px-5 py-8">
+  <div class="mx-auto max-w-3xl">
+    <div class="mb-10 flex items-center justify-between">
+      <lq-logo /><span class="text-xs text-muted">{{ step() + 1 }} / 7</span>
+    </div>
+    <lq-progress [value]="((step() + 1) / 7) * 100" />
+    <section class="card mt-8 p-6 sm:p-12">
+      <span
+        class="mb-7 flex size-16 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+        ><lq-icon [name]="steps[step()]!.icon" [size]="30"
+      /></span>
+      <h1 class="text-3xl font-semibold tracking-tight">
+        {{ i18n.t(steps[step()]!.title, steps[step()]!.ar) }}
+      </h1>
+      <p class="mb-8 mt-4 text-sm leading-7 text-muted">
+        {{ i18n.t(steps[step()]!.text, steps[step()]!.textAr) }}
+      </p>
+      <form [formGroup]="form" (ngSubmit)="next()">
+        @switch (step()) {
+          @case (0) {
+            <div class="rounded-xl bg-mint p-5 text-sm leading-7 text-mint-ink">
+              {{
+                i18n.t(
+                  'Never miss twice. Small minimum actions are valid. Progress beats
+          perfection.',
+                  'لا تفوّت مرتين. الخطوات الصغيرة مقبولة. التقدم أهم من الكمال.'
+                )
+              }}
+            </div>
+          }
+          @case (1) {
+            <div class="grid grid-cols-2 gap-3">
+              @for (area of areas.data(); track area.id) {
+                <button
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border p-4 text-start"
+                  [class]="
+                    selected().includes(area.id) ? 'border-brand bg-brand-soft' : 'border-line'
+                  "
+                  [attr.aria-pressed]="selected().includes(area.id)"
+                  (click)="toggle(area.id)"
+                >
+                  <lq-icon [name]="area.icon" class="text-brand" /><span
+                    class="text-sm font-medium"
+                    >{{ i18n.t(area.name, area.nameAr) }}</span
+                  >
+                  @if (selected().includes(area.id)) {
+                    <lq-icon name="check" [size]="15" class="ms-auto text-brand" />
+                  }
+                </button>
+              }
+            </div>
+          }
+          @case (2) {
+            <lq-field
+              id="onboard-goal"
+              [label]="i18n.t('My first meaningful goal', 'أول هدف ذي معنى لي')"
+              ><input
+                id="onboard-goal"
+                class="field"
+                formControlName="goal"
+                [placeholder]="
+                  i18n.t('e.g. Feel healthier and more present', 'مثال: أشعر بصحة وحضور أكبر')
+                "
+            /></lq-field>
+            <p class="text-xs text-muted">
+              {{
+                i18n.t(
+                  'Optional. You can find your direction later, too.',
+                  'اختياري. يمكنك إيجاد اتجاهك
+          لاحقاً أيضاً.'
+                )
+              }}
+            </p>
+          }
+          @case (3) {
+            <lq-field id="onboard-habit" [label]="i18n.t('One tiny habit', 'عادة صغيرة واحدة')"
+              ><input
+                id="onboard-habit"
+                class="field"
+                formControlName="habit"
+                [placeholder]="i18n.t('e.g. Take a short walk', 'مثال: أمشي قليلاً')"
+            /></lq-field>
+            <p class="text-xs text-muted">
+              {{
+                i18n.t(
+                  'Optional. Two minutes is a perfectly good start.',
+                  'اختياري. دقيقتان بداية
+          رائعة.'
+                )
+              }}
+            </p>
+          }
+          @case (4) {
+            <lq-field id="onboard-routine" [label]="i18n.t('My preferred time', 'وقتي المفضل')"
+              ><select id="onboard-routine" class="field" formControlName="preferredRoutine">
+                <option value="morning">
+                  {{ i18n.t('A fresh morning start', 'بداية صباحية منعشة') }}
+                </option>
+                <option value="afternoon">
+                  {{ i18n.t('An afternoon reset', 'استراحة بعد الظهر') }}
+                </option>
+                <option value="evening">{{ i18n.t('A quieter evening', 'مساء أهدأ') }}</option>
+              </select></lq-field
+            >
+          }
+          @case (5) {
+            <lq-field
+              id="onboard-privacy"
+              [label]="i18n.t('Profile visibility', 'ظهور الملف الشخصي')"
+              ><select id="onboard-privacy" class="field" formControlName="profileVisibility">
+                <option value="PRIVATE">
+                  {{ i18n.t('Private — just for me', 'خاص — لي فقط') }}
+                </option>
+                <option value="FRIENDS">
+                  {{ i18n.t('Friends I choose', 'الأصدقاء الذين أختارهم') }}
+                </option>
+              </select></lq-field
+            >
+          }
+          @case (6) {
+            <div class="space-y-3 rounded-xl bg-brand-soft p-5">
+              <p class="text-sm">
+                <lq-icon name="check" class="me-2 text-brand" [size]="16" />{{ selected().length }}
+                {{ i18n.t('life areas to nurture', 'مجالات حياة للاهتمام بها') }}
+              </p>
+              @if (form.controls.goal.value) {
+                <p class="text-sm">
+                  <lq-icon name="target" class="me-2 text-brand" [size]="16" />{{
+                    form.controls.goal.value
+                  }}
+                </p>
+              }
+              @if (form.controls.habit.value) {
+                <p class="text-sm">
+                  <lq-icon name="sprout" class="me-2 text-brand" [size]="16" />{{
+                    form.controls.habit.value
+                  }}
+                </p>
+              }
+            </div>
+          }
+        }
+        @if (error()) {
+          <p role="alert" class="mt-5 text-sm text-rose-600">{{ error() }}</p>
+        }
+        <div class="mt-10 flex justify-between gap-3">
+          @if (step() > 0) {
+            <button type="button" class="btn btn-secondary" (click)="step.update(previousStep)">
+              {{ i18n.t('Back', 'رجوع') }}
+            </button>
+          } @else {
+            <span></span>
+          }
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="busy() || (step() === 1 && !selected().length)"
+          >
+            {{
+              step() === 6
+                ? i18n.t('Begin my journey', 'ابدأ رحلتي')
+                : i18n.t('Continue', 'متابعة')
+            }}<lq-icon name="arrow-right" [size]="17" />
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

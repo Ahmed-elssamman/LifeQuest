@@ -1,0 +1,244 @@
+<lq-page-header
+  [eyebrow]="i18n.t('THE BIGGER PICTURE', 'الصورة الأكبر')"
+  [title]="i18n.t('Give your growth a direction.', 'امنح نموك اتجاهاً.')"
+  [description]="
+    i18n.t(
+      'Meaningful outcomes, made possible by small everyday actions.',
+      'نتائج ذات معنى، تصنعها خطوات يومية صغيرة.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New goal', 'هدف جديد') }}
+  </button></lq-page-header
+>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else if (resource.data(); as data) {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (goal of data.items; track goal.id) {
+      <article class="card flex flex-col p-6">
+        <div class="mb-5 flex items-center justify-between">
+          <span
+            class="flex size-11 items-center justify-center rounded-xl"
+            [class]="'area-' + goal.area.slug"
+            ><lq-icon [name]="goal.area.icon" [size]="23" /></span
+          ><span class="badge bg-canvas text-muted">{{
+            i18n.t(goal.area.name, goal.area.nameAr)
+          }}</span>
+        </div>
+        <h2 class="text-lg font-semibold tracking-tight">{{ goal.title }}</h2>
+        <span class="mt-2 text-xs text-muted">{{ i18n.label(goal.status) }}</span>
+        <p class="mb-6 mt-2 line-clamp-3 text-xs leading-6 text-muted">
+          {{
+            goal.description ||
+              i18n.t(
+                'One step at a time toward something that matters.',
+                'خطوة بخطوة
+      نحو ما يهمك.'
+              )
+          }}
+        </p>
+        <div class="mt-auto">
+          <div class="mb-2 flex items-center justify-between text-xs">
+            <span class="text-muted">{{ i18n.t('Progress', 'التقدم') }}</span
+            ><span class="font-semibold text-brand">{{ goal.progress.toFixed(0) }}%</span>
+          </div>
+          <lq-progress [value]="goal.progress" />
+          <div class="mt-4 flex items-center justify-between text-[10px] text-muted">
+            <span>{{
+              goal.targetDate
+                ? (goal.targetDate | date: 'MMM d, y')
+                : i18n.t(
+                    'At your own
+          pace',
+                    'بإيقاعك الخاص'
+                  )
+            }}</span
+            ><span>{{
+              goal.strategy === 'PROJECT'
+                ? i18n.t('Linked projects', 'مشروعات مرتبطة')
+                : goal.strategy === 'NUMERIC'
+                  ? i18n.t('Numeric target', 'هدف رقمي')
+                  : goal.strategy === 'MILESTONE'
+                    ? i18n.t('Milestones', 'مراحل')
+                    : i18n.t('Personal progress', 'تقدم شخصي')
+            }}</span>
+          </div>
+          <details class="mt-4 border-t border-line pt-3">
+            <summary class="min-h-10 cursor-pointer text-xs font-medium text-brand">
+              {{ i18n.t('Milestones', 'المراحل') }} · {{ goal.milestones.length }}
+            </summary>
+            <lq-milestones
+              [goalId]="goal.id"
+              [items]="goal.milestones"
+              (changed)="resource.load()"
+            />
+          </details>
+          <div class="mt-5 flex gap-2 border-t border-line pt-4">
+            <button class="btn btn-secondary flex-1 text-xs" (click)="edit(goal)">
+              {{ i18n.t('Update goal', 'تحديث الهدف') }}</button
+            ><button class="btn btn-quiet text-xs" (click)="archive(goal)">
+              {{
+                goal.status === 'ARCHIVED'
+                  ? i18n.t('Restore', 'استعادة')
+                  : i18n.t('Archive', 'أرشفة')
+              }}
+            </button>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="target"
+          [title]="
+            i18n.t('What would make this season meaningful?', 'ما الذي يجعل هذا الموسم ذا معنى؟')
+          "
+          [description]="
+            i18n.t(
+              'Choose one outcome you care about. We’ll help you break it down.',
+              'اختر نتيجة واحدة تهمك. سنساعدك على تقسيمها.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Create my first goal', 'إنشاء هدفي الأول') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+  <lq-pagination [page]="data.page" [total]="data.total" (change)="page($event)" />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="
+    editing() ? i18n.t('Shape your goal', 'شكّل هدفك') : i18n.t('A new direction', 'اتجاه جديد')
+  "
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '36rem' }"
+  [closable]="!saving()"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field
+      id="goal-title"
+      [label]="i18n.t('What do you want to achieve?', 'ماذا تريد أن تحقق؟')"
+      [required]="true"
+      ><input
+        id="goal-title"
+        class="field"
+        formControlName="title"
+        [placeholder]="
+          i18n.t('e.g. Feel stronger and more energetic', 'مثال: أشعر بقوة وطاقة أكبر')
+        " /></lq-field
+    ><lq-field id="goal-description" [label]="i18n.t('Why does it matter?', 'لماذا يهمك؟')">
+      <textarea
+        id="goal-description"
+        class="field"
+        rows="2"
+        formControlName="description"
+      ></textarea>
+    </lq-field>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="goal-area" [label]="i18n.t('Life area', 'مجال الحياة')"
+        ><select class="field" id="goal-area" formControlName="areaId">
+          @for (area of areas.data(); track area.id) {
+            <option [value]="area.id">{{ i18n.t(area.name, area.nameAr) }}</option>
+          }
+        </select></lq-field
+      ><lq-field
+        id="goal-date"
+        [label]="i18n.t('Target date (optional)', 'التاريخ المستهدف (اختياري)')"
+        ><input id="goal-date" class="field" type="date" formControlName="targetDate"
+      /></lq-field>
+    </div>
+    <lq-field
+      id="goal-strategy"
+      [label]="i18n.t('How should progress be measured?', 'كيف نقيس التقدم؟')"
+      ><select id="goal-strategy" class="field" formControlName="strategy">
+        <option value="MANUAL">
+          {{ i18n.t('My own progress estimate', 'تقديري الشخصي للتقدم') }}
+        </option>
+        <option value="PROJECT">
+          {{ i18n.t('From linked projects', 'من المشروعات المرتبطة') }}
+        </option>
+        <option value="NUMERIC">{{ i18n.t('A numeric target', 'هدف رقمي') }}</option>
+        <option value="MILESTONE">{{ i18n.t('From milestones', 'من المراحل') }}</option>
+      </select></lq-field
+    >
+    @if (form.controls.strategy.value === 'MANUAL') {
+      <lq-field id="goal-progress" [label]="i18n.t('Progress (%)', 'التقدم (%)')"
+        ><input
+          id="goal-progress"
+          class="field"
+          type="number"
+          min="0"
+          max="100"
+          formControlName="manualProgress"
+      /></lq-field>
+    }
+    @if (form.controls.strategy.value === 'NUMERIC') {
+      <div class="grid grid-cols-2 gap-4">
+        <lq-field id="goal-value" [label]="i18n.t('Current value', 'القيمة الحالية')"
+          ><input
+            id="goal-value"
+            class="field"
+            type="number"
+            min="0"
+            formControlName="numericValue" /></lq-field
+        ><lq-field id="goal-target" [label]="i18n.t('Target', 'المستهدف')"
+          ><input
+            id="goal-target"
+            class="field"
+            type="number"
+            min="1"
+            formControlName="numericTarget"
+        /></lq-field>
+      </div>
+      <lq-field id="goal-unit" [label]="i18n.t('Unit (optional)', 'الوحدة (اختياري)')">
+        <input id="goal-unit" class="field" formControlName="unit" />
+      </lq-field>
+    }
+    <details class="mb-5 rounded-xl border border-line p-4">
+      <summary class="min-h-11 cursor-pointer text-sm font-medium">
+        {{ i18n.t('More planning options', 'خيارات تخطيط إضافية') }}
+      </summary>
+      <lq-field id="goal-start" [label]="i18n.t('Start date (optional)', 'تاريخ البدء (اختياري)')">
+        <input id="goal-start" class="field" type="date" formControlName="startDate" />
+      </lq-field>
+      <lq-field id="goal-priority" [label]="i18n.t('Priority', 'الأولوية')">
+        <select id="goal-priority" class="field" formControlName="priority">
+          <option value="LOW">{{ i18n.t('Low', 'منخفضة') }}</option>
+          <option value="MEDIUM">{{ i18n.t('Medium', 'متوسطة') }}</option>
+          <option value="HIGH">{{ i18n.t('High', 'عالية') }}</option>
+        </select>
+      </lq-field>
+      <lq-field id="goal-notes" [label]="i18n.t('Private notes', 'ملاحظات خاصة')">
+        <textarea id="goal-notes" class="field" rows="3" formControlName="notes"></textarea>
+      </lq-field>
+      @if (editing()) {
+        <lq-field id="goal-status" [label]="i18n.t('Status', 'الحالة')">
+          <select id="goal-status" class="field" formControlName="status">
+            <option value="PLANNED">{{ i18n.t('Planned', 'مخطط') }}</option>
+            <option value="ACTIVE">{{ i18n.t('Active', 'نشط') }}</option>
+            <option value="PAUSED">{{ i18n.t('Paused', 'متوقف مؤقتاً') }}</option>
+            <option value="COMPLETED">{{ i18n.t('Completed', 'مكتمل') }}</option>
+            <option value="ARCHIVED">{{ i18n.t('Archived', 'مؤرشف') }}</option>
+          </select>
+        </lq-field>
+      }
+    </details>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <div class="flex justify-end gap-2 border-t border-line pt-4">
+      <button type="button" class="btn btn-secondary" (click)="discard.close(false, open, form)">
+        {{ i18n.t('Cancel', 'إلغاء') }}</button
+      ><button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid">
+        {{ saving() ? i18n.t('Saving…', 'جارٍ الحفظ…') : i18n.t('Save goal', 'حفظ الهدف') }}
+      </button>
+    </div>
+  </form></p-dialog
+>

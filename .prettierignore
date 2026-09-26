@@ -1,0 +1,12 @@
+node_modules
+dist
+.nx
+.angular
+coverage
+package-lock.json
+prisma/migrations
+.local
+playwright-report
+test-results
+.env*
+

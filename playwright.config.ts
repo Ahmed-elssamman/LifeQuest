@@ -1,0 +1,24 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({
+  testDir: './tests/e2e',
+  fullyParallel: false,
+  workers: 1,
+  timeout: 60000,
+  expect: { timeout: 10000 },
+  use: {
+    baseURL: 'http://localhost:4300',
+    browserName: 'chromium',
+    headless: true,
+    // Route fixtures must reach the API instead of a previous PWA worker.
+    serviceWorkers: 'block',
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+  },
+  reporter: [['list'], ['html', { open: 'never' }]],
+  webServer: {
+    command: 'node tools/e2e-server.mjs',
+    url: 'http://localhost:4300/api/health',
+    timeout: 120000,
+    reuseExistingServer: false,
+  },
+});

@@ -1,0 +1,9 @@
+{
+  "name": "LifeQuest \u00b7 \u0631\u062d\u0644\u0629 \u0627\u0644\u062a\u0648\u0627\u0632\u0646",
+  "short_name": "LifeQuest",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#6b57cd",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

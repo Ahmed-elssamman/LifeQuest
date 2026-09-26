@@ -1,0 +1,6 @@
+{
+  "name": "config",
+  "projectType": "library",
+  "sourceRoot": "libs/config/src",
+  "tags": ["scope:shared", "type:config"]
+}

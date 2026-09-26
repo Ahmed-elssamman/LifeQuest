@@ -1,0 +1,172 @@
+<lq-page-header
+  [eyebrow]="i18n.t('PROGRESS DESERVES A LITTLE JOY', 'التقدم يستحق قليلاً من الفرح')"
+  [title]="i18n.t('Make room for the good things.', 'اصنع مساحة للأشياء الجميلة.')"
+  [description]="
+    i18n.t(
+      'Rest, enjoyment, and a little celebration. They belong in your journey, too.',
+      'الراحة والاستمتاع وقليل من الاحتفال. هي جزء من رحلتك أيضاً.'
+    )
+  "
+  ><button class="btn btn-secondary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('Personal reward', 'مكافأة شخصية') }}
+  </button></lq-page-header
+>
+<div class="mb-7 flex items-center justify-between gap-4 rounded-2xl bg-[#302943] p-6 text-white">
+  <div>
+    <p class="text-[10px] uppercase tracking-widest text-white/50">
+      {{ i18n.t('YOURS TO ENJOY', 'لك لتستمتع') }}
+    </p>
+    <p class="mt-2 text-3xl font-semibold">
+      {{ xp.data()?.balance ?? 0 }} <span class="text-sm font-normal text-[#c7bafa]">XP</span>
+    </p>
+  </div>
+  <div class="max-w-48 text-end">
+    <lq-icon name="gift" [size]="28" class="mb-2 text-[#c7bafa]" />
+    <p class="text-[10px] leading-5 text-white/60">
+      {{
+        i18n.t(
+          'Spending XP never takes away your level or lifetime progress.',
+          'إنفاق النقاط لا
+      يقلل مستواك أو تقدمك عبر الوقت.'
+        )
+      }}
+    </p>
+  </div>
+</div>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    @for (reward of resource.data()?.items; track reward.id) {
+      <article class="card flex flex-col overflow-hidden">
+        <div class="flex h-36 items-center justify-center bg-brand-soft">
+          <span
+            class="flex size-20 items-center justify-center rounded-full border border-brand/10 bg-surface/60 text-brand"
+            ><lq-icon [name]="reward.icon" [size]="35"
+          /></span>
+        </div>
+        <div class="flex flex-1 flex-col p-5">
+          <p class="eyebrow text-[9px]">{{ reward.category }}</p>
+          <h2 class="mt-2 text-base font-semibold">{{ reward.title }}</h2>
+          <p class="mb-5 mt-2 text-xs leading-6 text-muted">{{ reward.description }}</p>
+          <div class="mt-auto">
+            <p class="mb-4 flex items-center gap-1.5 text-sm font-semibold text-brand">
+              <lq-icon name="zap" [size]="15" />{{ reward.cost }} XP
+            </p>
+            <button
+              class="btn w-full text-xs"
+              [class]="(xp.data()?.balance ?? 0) >= reward.cost ? 'btn-primary' : 'btn-secondary'"
+              [disabled]="!!busy() || (xp.data()?.balance ?? 0) < reward.cost"
+              (click)="confirmRedeem(reward)"
+            >
+              {{
+                (xp.data()?.balance ?? 0) >= reward.cost
+                  ? i18n.t(
+                      'Enjoy this reward',
+                      'استمتع
+          بالمكافأة'
+                    )
+                  : i18n.t('Getting closer', 'تقترب منها')
+              }}
+            </button>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="gift"
+          [title]="i18n.t('What would feel like a little reward?', 'ما الذي يمنحك شعور المكافأة؟')"
+          [description]="
+            i18n.t('Add something personal to look forward to.', 'أضف شيئاً شخصياً تتطلع إليه.')
+          "
+          ><button class="btn btn-primary" (click)="create()">
+            {{ i18n.t('Create a reward', 'إنشاء مكافأة') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}
+<section class="mt-9">
+  <lq-section-title [title]="i18n.t('Little joys you’ve earned', 'أفراح صغيرة استحققتها')" />
+  <div class="card divide-y divide-line">
+    @for (item of history.data()?.items; track item.id) {
+      <div class="flex items-center gap-3 p-4">
+        <span class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
+          ><lq-icon [name]="item.reward.icon" [size]="19"
+        /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-medium">{{ item.reward.title }}</p>
+          <p class="mt-1 text-[10px] text-muted">{{ item.createdAt | date: 'MMM d, h:mm a' }}</p>
+        </div>
+        <span class="text-xs text-muted">{{
+          item.refundedAt ? i18n.t('Returned', 'أُعيدت') : '−' + item.costSnapshot + ' XP'
+        }}</span>
+        @if (refundable(item)) {
+          <button class="btn btn-quiet text-xs" (click)="refund(item.id)">
+            {{ i18n.t('Undo', 'تراجع') }}
+          </button>
+        }
+      </div>
+    } @empty {
+      <p class="p-6 text-xs leading-6 text-muted">
+        {{
+          i18n.t(
+            'Your first reward is waiting. Every small step brings it closer.',
+            'مكافأتك الأولى
+      تنتظرك. كل خطوة صغيرة تقربها.'
+          )
+        }}
+      </p>
+    }
+  </div>
+</section>
+@if (history.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="historyPage($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Something to look forward to', 'شيء تتطلع إليه')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field id="reward-title" [label]="i18n.t('Your reward', 'مكافأتك')"
+      ><input id="reward-title" class="field" formControlName="title" /></lq-field
+    ><lq-field id="reward-description" [label]="i18n.t('Make it personal', 'اجعلها شخصية')">
+      <textarea
+        id="reward-description"
+        class="field"
+        rows="2"
+        formControlName="description"
+      ></textarea></lq-field
+    ><lq-field
+      id="reward-cost"
+      [label]="i18n.t('XP cost (minimum 50)', 'التكلفة (50 نقطة على الأقل)')"
+      ><input id="reward-cost" class="field" type="number" min="50" formControlName="cost"
+    /></lq-field>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button type="submit" class="btn btn-primary w-full" [disabled]="saving() || form.invalid">
+      {{ i18n.t('Save reward', 'حفظ المكافأة') }}
+    </button>
+  </form></p-dialog
+>

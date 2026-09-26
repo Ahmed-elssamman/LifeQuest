@@ -1,0 +1,101 @@
+import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, exhaustMap, filter, from, timer } from 'rxjs';
+import { Injectable, inject, signal, PLATFORM_ID, DestroyRef } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { Api, User, Celebrations, errorMessage } from '@lifequest/data-access';
+import { Preferences } from '@lifequest/utilities';
+@Injectable({ providedIn: 'root' })
+export class AuthStore {
+  private readonly api = inject(Api);
+  private readonly celebrations = inject(Celebrations);
+  private readonly preferences = inject(Preferences);
+  readonly user = signal<User | null>(null);
+  readonly languageSaving = signal(false);
+  readonly languageError = signal('');
+  private loading?: Promise<User | null>;
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      timer(30 * 60_000, 30 * 60_000)
+        .pipe(
+          filter(() => !!this.user()),
+          exhaustMap(() => from(this.api.post('auth/refresh')).pipe(catchError(() => EMPTY))),
+          takeUntilDestroyed(destroyRef),
+        )
+        .subscribe();
+    }
+  }
+  async load(): Promise<User | null> {
+    if (this.user()) return this.user();
+    if (this.loading) return this.loading;
+    this.loading = this.api
+      .get<User>('auth/me')
+      .then((user) => {
+        this.setUser(user);
+        return user;
+      })
+      .catch(() => null)
+      .finally(() => {
+        this.loading = undefined;
+      });
+    return this.loading;
+  }
+  setUser(user: User) {
+    this.user.set(user);
+    this.preferences.setLanguage(user.profile.language);
+    this.preferences.setTheme(user.profile.theme);
+    this.preferences.setReducedMotion(user.profile.reducedMotion);
+  }
+  async changeLanguage() {
+    if (this.languageSaving() || !this.user()) return;
+    this.languageSaving.set(true);
+    this.languageError.set('');
+    const language = this.preferences.rtl() ? 'en' : 'ar';
+    try {
+      await this.api.patch('profile', { language });
+      this.user.update((user) =>
+        user ? { ...user, profile: { ...user.profile, language } } : null,
+      );
+      this.preferences.setLanguage(language);
+    } catch (error) {
+      this.languageError.set(errorMessage(error));
+    } finally {
+      this.languageSaving.set(false);
+    }
+  }
+  async login(email: string, password: string) {
+    const result = await this.api.post<{ user: User }>('auth/login', { email, password });
+    this.setUser(result.user);
+    return result.user;
+  }
+  async register(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    timezone: string;
+  }) {
+    const result = await this.api.post<{ user: User }>('auth/register', input);
+    this.setUser(result.user);
+    return result.user;
+  }
+  async logout() {
+    try {
+      await this.api.post('auth/logout');
+    } finally {
+      this.user.set(null);
+      this.celebrations.dismiss();
+    }
+  }
+}
+export const authGuard: CanActivateFn = async () => {
+  const auth = inject(AuthStore);
+  const router = inject(Router);
+  return (await auth.load()) ? true : router.createUrlTree(['/auth/login']);
+};
+export const adminGuard: CanActivateFn = async () => {
+  const auth = inject(AuthStore);
+  const router = inject(Router);
+  const user = await auth.load();
+  return user && user.role !== 'USER' ? true : router.createUrlTree(['/auth/login']);
+};

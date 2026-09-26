@@ -1,0 +1,243 @@
+<lq-page-header
+  [eyebrow]="i18n.t('ONE THING AT A TIME', 'شيء واحد في كل مرة')"
+  [title]="i18n.t('Make space for focused work.', 'اصنع مساحة للعمل بتركيز.')"
+  [description]="
+    i18n.t(
+      'A clear next action is a little less weight on your mind.',
+      'الخطوة التالية الواضحة تخفف قليلاً من عبء ذهنك.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="create()">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('New task', 'مهمة جديدة') }}
+  </button></lq-page-header
+>
+<div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+  <div class="flex gap-1 rounded-xl border border-line bg-surface p-1">
+    @for (
+      tab of [
+        { id: 'ALL', en: 'All tasks', ar: 'كل المهام' },
+        {
+          id: 'OPEN',
+          en: 'To
+    do',
+          ar: 'للإنجاز',
+        },
+        { id: 'DONE', en: 'Done', ar: 'تمت' },
+      ];
+      track tab.id
+    ) {
+      <button
+        class="btn !min-h-9 !px-3 !py-2 text-xs"
+        [class]="filter() === tab.id ? 'bg-brand-soft text-brand' : 'text-muted'"
+        (click)="setFilter(tab.id)"
+      >
+        {{ i18n.t(tab.en, tab.ar) }}
+      </button>
+    }
+  </div>
+  <form class="flex min-w-0 gap-2" (ngSubmit)="find()">
+    <input
+      class="field !w-44 sm:!w-56"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      name="search"
+      [placeholder]="i18n.t('Find a task…', 'ابحث عن مهمة…')"
+      [attr.aria-label]="i18n.t('Search tasks', 'البحث في المهام')"
+    /><button
+      class="icon-button border border-line"
+      type="submit"
+      [attr.aria-label]="i18n.t('Search', 'بحث')"
+    >
+      <lq-icon name="search" />
+    </button>
+  </form>
+</div>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="card divide-y divide-line">
+    @for (task of visible(); track task.id) {
+      <article class="flex items-start gap-4 p-5">
+        <button
+          class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg border"
+          [class]="
+            task.status === 'COMPLETED'
+              ? 'border-mint bg-mint text-mint-ink'
+              : 'border-line hover:border-brand'
+          "
+          [disabled]="busy() === task.id"
+          [attr.aria-label]="
+            (task.status === 'COMPLETED'
+              ? i18n.t('Reopen ', 'إعادة فتح ')
+              : i18n.t('Complete ', 'إتمام ')) + task.title
+          "
+          (click)="toggle(task)"
+        >
+          @if (task.status === 'COMPLETED') {
+            <lq-icon name="check" [size]="16" />
+          }
+        </button>
+        <div class="min-w-0 flex-1">
+          <h2
+            class="text-sm font-medium"
+            [class.line-through]="task.status === 'COMPLETED'"
+            [class.text-muted]="task.status === 'COMPLETED'"
+          >
+            {{ task.title }}
+          </h2>
+          @if (task.description) {
+            <p class="mt-1 text-xs leading-6 text-muted">{{ task.description }}</p>
+          }
+          <div class="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-muted">
+            @if (task.project) {
+              <span class="flex items-center gap-1"
+                ><lq-icon name="folder" [size]="12" />{{ task.project.title }}</span
+              >
+            }
+            @if (task.dueDate) {
+              <span>{{ task.dueDate | date: 'MMM d' }}</span>
+            }
+            @if (task.parent) {
+              <span>{{ i18n.t('Part of: ', 'جزء من: ') }}{{ task.parent.title }}</span>
+            }
+            @if (task.estimatedMinutes) {
+              <span>{{ task.estimatedMinutes }} {{ i18n.t('min', 'دقيقة') }}</span>
+            }
+          </div>
+        </div>
+        <button
+          class="icon-button shrink-0"
+          [attr.aria-label]="i18n.t('Edit ', 'تعديل ') + task.title"
+          (click)="edit(task)"
+        >
+          <lq-icon name="more" />
+        </button>
+        <span
+          class="badge text-[9px]"
+          [class]="task.priority === 'HIGH' ? 'bg-coral text-orange-800' : 'bg-canvas text-muted'"
+          >{{
+            task.priority === 'HIGH'
+              ? i18n.t('Priority', 'أولوية')
+              : task.priority === 'LOW'
+                ? i18n.t('Someday', 'لاحقاً')
+                : i18n.t('Steady', 'بهدوء')
+          }}</span
+        >
+      </article>
+    } @empty {
+      <lq-empty
+        icon="tasks"
+        [title]="i18n.t('A little breathing room.', 'مساحة للتنفس.')"
+        [description]="
+          i18n.t(
+            'No tasks in this view. Add your next meaningful action, or enjoy the space.',
+            'لا توجد مهام هنا. أضف خطوتك التالية أو استمتع بالمساحة.'
+          )
+        "
+        ><button class="btn btn-primary" (click)="create()">
+          {{ i18n.t('Add a task', 'إضافة مهمة') }}
+        </button></lq-empty
+      >
+    }
+  </div>
+  @if (resource.data(); as data) {
+    <lq-pagination [page]="data.page" [total]="data.total" (change)="find($event)" />
+  }
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('One clear next step', 'خطوة تالية واضحة')"
+  [visible]="open()"
+  (visibleChange)="discard.close($event, open, form)"
+  [modal]="true"
+  [style]="{ width: '34rem' }"
+  ><form [formGroup]="form" [lqUnsavedForm]="form" [unsavedActive]="open()" (ngSubmit)="save()">
+    <lq-field id="task-title" [label]="i18n.t('What needs doing?', 'ما الذي يحتاج للإنجاز؟')"
+      ><input id="task-title" class="field" formControlName="title" /></lq-field
+    ><lq-field
+      id="task-description"
+      [label]="i18n.t('A little context (optional)', 'قليل من السياق (اختياري)')"
+    >
+      <textarea
+        id="task-description"
+        class="field"
+        rows="2"
+        formControlName="description"
+      ></textarea></lq-field
+    ><lq-field id="task-project" [label]="i18n.t('Project', 'المشروع')"
+      ><select id="task-project" class="field" formControlName="projectId">
+        <option value="">{{ i18n.t('Independent task', 'مهمة مستقلة') }}</option>
+        @for (project of projects.data()?.items; track project.id) {
+          <option [value]="project.id">{{ project.title }}</option>
+        }
+      </select></lq-field
+    >
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="task-date" [label]="i18n.t('Due date', 'تاريخ الاستحقاق')"
+        ><input id="task-date" type="date" class="field" formControlName="dueDate" /></lq-field
+      ><lq-field id="task-priority" [label]="i18n.t('Priority', 'الأولوية')"
+        ><select id="task-priority" class="field" formControlName="priority">
+          <option value="LOW">{{ i18n.t('Low', 'منخفضة') }}</option>
+          <option value="MEDIUM">{{ i18n.t('Medium', 'متوسطة') }}</option>
+          <option value="HIGH">{{ i18n.t('High', 'عالية') }}</option>
+        </select></lq-field
+      >
+    </div>
+    <lq-field id="task-goal" [label]="i18n.t('Linked goal', 'الهدف المرتبط')"
+      ><select id="task-goal" class="field" formControlName="goalId">
+        <option value="">{{ i18n.t('No direct goal', 'بدون هدف مباشر') }}</option>
+        @for (goal of goals.data()?.items; track goal.id) {
+          <option [value]="goal.id">{{ goal.title }}</option>
+        }
+      </select></lq-field
+    >
+    <div class="grid gap-4 sm:grid-cols-2">
+      <lq-field id="task-start" [label]="i18n.t('Start date', 'تاريخ البدء')"
+        ><input id="task-start" class="field" type="date" formControlName="startDate" /></lq-field
+      ><lq-field id="task-effort" [label]="i18n.t('Estimated minutes', 'الدقائق المتوقعة')"
+        ><input
+          id="task-effort"
+          class="field"
+          type="number"
+          min="1"
+          max="10000"
+          formControlName="estimatedMinutes"
+      /></lq-field>
+    </div>
+    @if (form.controls.parentId.value) {
+      <div
+        class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-brand-soft p-3 text-xs"
+      >
+        <span>{{ i18n.t('A small step within a bigger task.', 'خطوة صغيرة ضمن مهمة أكبر.') }}</span>
+        <button
+          type="button"
+          class="btn btn-quiet text-xs"
+          (click)="form.controls.parentId.setValue(''); form.markAsDirty()"
+        >
+          {{ i18n.t('Make independent', 'اجعلها مستقلة') }}
+        </button>
+      </div>
+    }
+    @if (editing()) {
+      <button
+        type="button"
+        class="btn btn-secondary mb-4 w-full"
+        (click)="subtask()"
+        [disabled]="saving()"
+      >
+        {{ i18n.t('Break into a subtask', 'قسّمها إلى مهمة فرعية') }}
+      </button>
+    }
+    <lq-field id="task-labels" [label]="i18n.t('Labels (comma separated)', 'الوسوم (افصل بفاصلة)')"
+      ><input id="task-labels" class="field" formControlName="labels"
+    /></lq-field>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button class="btn btn-primary w-full" type="submit" [disabled]="saving() || form.invalid">
+      {{ editing() ? i18n.t('Save task', 'حفظ المهمة') : i18n.t('Add task', 'إضافة المهمة') }}
+    </button>
+  </form></p-dialog
+>

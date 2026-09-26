@@ -1,0 +1,158 @@
+<lq-page-header
+  [eyebrow]="i18n.t('A LITTLE COMPANY ON THE WAY', 'قليل من الرفقة في الطريق')"
+  [title]="i18n.t('Better, together.', 'أفضل، معاً.')"
+  [description]="
+    i18n.t(
+      'Connect with people you trust. Encourage each other without sharing more than you want.',
+      'تواصل مع من تثق بهم. شجعوا بعضكم دون مشاركة أكثر مما تريدون.'
+    )
+  "
+  ><button class="btn btn-primary" (click)="open.set(true)">
+    <lq-icon name="plus" [size]="17" />{{ i18n.t('Add a friend', 'إضافة صديق') }}
+  </button></lq-page-header
+>
+<div class="mb-7 flex items-start gap-3 rounded-xl bg-brand-soft p-5">
+  <lq-icon name="shield" class="mt-0.5 text-brand" [size]="21" />
+  <p class="text-xs leading-6 text-muted">
+    {{
+      i18n.t(
+        'Private by design. Friends see your name and the challenge progress you choose to
+    share. Your journal, mood, and habit details stay yours.',
+        'الخصوصية أساس التصميم. يرى الأصدقاء
+    اسمك وتقدم التحدي الذي تختار مشاركته. يومياتك ومزاجك وتفاصيل عاداتك تبقى لك.'
+      )
+    }}
+  </p>
+</div>
+@if (resource.loading() && !resource.data()) {
+  <lq-skeleton />
+} @else if (resource.error()) {
+  <lq-error [message]="resource.error()" (retry)="resource.load()" />
+} @else {
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (connection of resource.data()?.items; track connection.id) {
+      <article class="card p-6">
+        <div class="flex items-center gap-4">
+          <span
+            class="flex size-14 items-center justify-center rounded-full bg-violet text-xl font-semibold text-violet-700"
+            >{{ connection.friend.profile.displayName.charAt(0) }}</span
+          >
+          <div>
+            <h2 class="text-base font-semibold">{{ connection.friend.profile.displayName }}</h2>
+            <p class="mt-1 text-xs text-muted">
+              {{
+                connection.status === 'ACCEPTED'
+                  ? i18n.t(
+                      'On the journey with you',
+                      'معك في
+          الرحلة'
+                    )
+                  : connection.status === 'BLOCKED'
+                    ? i18n.t('Blocked', 'محظور')
+                    : connection.incoming
+                      ? i18n.t(
+                          'Wants
+          to connect',
+                          'يريد التواصل'
+                        )
+                      : i18n.t('Request sent', 'تم إرسال الطلب')
+              }}
+            </p>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2">
+          @if (connection.status === 'PENDING' && connection.incoming) {
+            <button
+              class="btn btn-primary flex-1 text-xs"
+              [disabled]="!!busy()"
+              (click)="action(connection, 'accept')"
+            >
+              {{ i18n.t('Accept', 'قبول') }}</button
+            ><button
+              class="btn btn-secondary text-xs"
+              [disabled]="!!busy()"
+              (click)="action(connection, 'reject')"
+            >
+              {{ i18n.t('Decline', 'رفض') }}
+            </button>
+          } @else if (connection.status === 'ACCEPTED') {
+            <a routerLink="/challenges" class="btn btn-primary w-full text-xs"
+              ><lq-icon name="swords" [size]="15" />{{ i18n.t('Grow together', 'تطورا معاً') }}</a
+            ><button class="btn btn-quiet flex-1 text-xs" (click)="remove(connection, 'remove')">
+              {{ i18n.t('Remove', 'إزالة') }}</button
+            ><button class="btn btn-quiet text-xs" (click)="remove(connection, 'block')">
+              {{ i18n.t('Block', 'حظر') }}
+            </button>
+          } @else {
+            <button
+              class="btn btn-secondary w-full text-xs"
+              (click)="action(connection, connection.status === 'PENDING' ? 'cancel' : 'remove')"
+            >
+              {{
+                connection.status === 'BLOCKED'
+                  ? i18n.t('Unblock', 'إلغاء الحظر')
+                  : i18n.t(
+                      'Cancel
+        request',
+                      'إلغاء الطلب'
+                    )
+              }}
+            </button>
+          }
+        </div>
+      </article>
+    } @empty {
+      <div class="col-span-full">
+        <lq-empty
+          icon="users"
+          [title]="i18n.t('A shared journey starts with hello.', 'الرحلة المشتركة تبدأ بمرحباً.')"
+          [description]="
+            i18n.t(
+              'Invite someone you trust. A little encouragement can go a long way.',
+              'ادعُ شخصاً تثق به. قليل من التشجيع يصنع فرقاً.'
+            )
+          "
+          ><button class="btn btn-primary" (click)="open.set(true)">
+            {{ i18n.t('Find a friend', 'اعثر على صديق') }}
+          </button></lq-empty
+        >
+      </div>
+    }
+  </div>
+}
+@if (resource.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="this.page($event)"
+  />
+}
+<p-dialog
+  [closeAriaLabel]="i18n.t('Close', 'إغلاق')"
+  [header]="i18n.t('Invite a little company', 'ادعُ قليلاً من الرفقة')"
+  [visible]="open()"
+  (visibleChange)="open.set($event)"
+  [modal]="true"
+  [style]="{ width: '30rem' }"
+  ><form [formGroup]="form" (ngSubmit)="invite()">
+    <p class="mb-5 text-xs leading-6 text-muted">
+      {{
+        i18n.t(
+          'Enter the email address your friend uses for LifeQuest. They can choose whether to
+      accept.',
+          'أدخل بريد صديقك المستخدم في رحلة التوازن. يمكنه اختيار قبول الطلب.'
+        )
+      }}
+    </p>
+    <lq-field id="friend-email" [label]="i18n.t('Friend’s email', 'بريد الصديق')"
+      ><input id="friend-email" class="field" type="email" formControlName="email" dir="ltr"
+    /></lq-field>
+    @if (error()) {
+      <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
+    }
+    <button class="btn btn-primary w-full" type="submit" [disabled]="saving() || form.invalid">
+      {{ i18n.t('Send friend request', 'إرسال طلب صداقة') }}
+    </button>
+  </form></p-dialog
+>

@@ -1,0 +1,6 @@
+{
+  "name": "forms",
+  "projectType": "library",
+  "sourceRoot": "libs/forms/src",
+  "tags": ["scope:shared", "type:forms"]
+}
