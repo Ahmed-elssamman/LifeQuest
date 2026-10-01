@@ -3,11 +3,12 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
-import { TokenPurpose } from '@prisma/client';
+import { Prisma, TokenPurpose } from '@prisma/client';
 import { InputOf, registerSchema } from '@lifequest/contracts';
 import { Database } from '../common/database';
 import { hashToken } from './auth.guard';
@@ -46,35 +47,66 @@ export class AuthService {
       },
       select: safeUser,
     });
-    if (this.mail.enabled) await this.issueEmailToken(user.id, input.email, 'VERIFY_EMAIL');
-    return { user, ...(await this.createSession(user.id)) };
+    const session = await this.createSession(user.id);
+    let verificationEmail: 'sent' | 'disabled' | 'unavailable' = 'disabled';
+    if (this.mail.enabled) {
+      try {
+        await this.issueEmailToken(user.id, input.email, 'VERIFY_EMAIL');
+        verificationEmail = 'sent';
+      } catch (error) {
+        if (!(error instanceof ServiceUnavailableException)) throw error;
+        // The account already exists. Keep it usable and offer verification retry.
+        verificationEmail = 'unavailable';
+      }
+    }
+    return { user, ...session, verificationEmail };
   }
   async login(email: string, password: string) {
     const user = await this.db.user.findUnique({ where: { email } });
-    const valid = await argon2.verify(user?.passwordHash ?? (await this.dummyHash), password);
+    const valid = await argon2.verify(
+      user?.status === 'ACTIVE' ? user.passwordHash : await this.dummyHash,
+      password,
+    );
     if (!user || !valid || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Email or password is incorrect.');
-    await this.db.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
-    return {
-      user: await this.db.user.findUniqueOrThrow({ where: { id: user.id }, select: safeUser }),
-      ...(await this.createSession(user.id)),
-    };
+    return this.db.atomic(user.id, async (tx) => {
+      const current = await tx.user.findUniqueOrThrow({ where: { id: user.id } });
+      // A password reset may have committed while Argon2 was verifying the old hash.
+      if (current.passwordHash !== user.passwordHash)
+        throw new UnauthorizedException('Email or password is incorrect.');
+      const safe = await tx.user.update({
+        where: { id: user.id },
+        data: { lastActiveAt: new Date() },
+        select: safeUser,
+      });
+      return { user: safe, ...(await this.persistSession(tx, user.id)) };
+    });
   }
   async createSession(userId: string) {
+    return this.db.atomic(userId, (tx) => this.persistSession(tx, userId));
+  }
+  private async persistSession(tx: Prisma.TransactionClient, userId: string) {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-    await this.db.session.create({ data: { userId, tokenHash: hashToken(token), expiresAt } });
+    await tx.session.create({ data: { userId, tokenHash: hashToken(token), expiresAt } });
     return { token, expiresAt };
   }
   async refresh(userId: string, sessionId: string) {
-    const session = await this.db.session.findUnique({ where: { id: sessionId, userId } });
-    if (!session || Date.now() - session.createdAt.getTime() > 7 * 60 * 60 * 24 * 1000)
-      throw new UnauthorizedException('Please sign in again to renew your session.');
-    const expiresAt = new Date(
-      Math.min(Date.now() + 60 * 60 * 1000, session.createdAt.getTime() + 7 * 86_400_000),
-    );
-    await this.db.session.update({ where: { id: sessionId, userId }, data: { expiresAt } });
-    return { expiresAt };
+    return this.db.atomic(userId, async (tx) => {
+      const session = await tx.session.findUnique({ where: { id: sessionId, userId } });
+      const now = Date.now();
+      if (
+        !session ||
+        session.expiresAt.getTime() <= now ||
+        now - session.createdAt.getTime() >= 7 * 86_400_000
+      )
+        throw new UnauthorizedException('Please sign in again to renew your session.');
+      const expiresAt = new Date(
+        Math.min(now + 60 * 60 * 1000, session.createdAt.getTime() + 7 * 86_400_000),
+      );
+      await tx.session.update({ where: { id: sessionId, userId }, data: { expiresAt } });
+      return { expiresAt };
+    });
   }
   async issueEmailToken(userId: string, email: string, purpose: TokenPurpose) {
     this.mail.assertConfigured();

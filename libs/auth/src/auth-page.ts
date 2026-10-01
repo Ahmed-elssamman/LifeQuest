@@ -104,13 +104,14 @@ export class AuthPage {
           ),
         );
       } else {
-        const user =
+        const registration =
           mode === 'register'
             ? await this.auth.register({
                 ...input,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               })
-            : await this.auth.login(input.email, input.password);
+            : undefined;
+        const user = registration?.user ?? (await this.auth.login(input.email, input.password));
         if (this.isAdmin && user.role === 'USER') {
           await this.auth.logout();
           this.error.set(
@@ -125,7 +126,7 @@ export class AuthPage {
           this.isAdmin
             ? '/overview'
             : user.profile.onboardingCompletedAt
-              ? '/dashboard'
+              ? '/today'
               : '/onboarding',
         ]);
       }

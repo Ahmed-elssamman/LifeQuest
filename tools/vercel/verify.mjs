@@ -36,12 +36,11 @@ try {
   const cookie = (await context.cookies(web + '/api')).find((item) => item.name === 'lq_session');
   assert.ok(cookie?.httpOnly && cookie?.secure && cookie?.sameSite === 'Lax');
   console.log('Production registration and secure session passed.');
-  for (let step = 0; step < 6; step++) {
-    if (step === 1) await page.getByRole('button', { name: 'Growth', exact: true }).click();
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  }
+  await page.getByRole('button', { name: 'Growth', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Skip for now' }).click();
   await page.getByRole('button', { name: 'Begin my journey' }).click();
-  await expect(page).toHaveURL(/dashboard$/);
+  await expect(page).toHaveURL(/today$/);
   await page.goto('/goals');
   await page.getByRole('button', { name: 'New goal', exact: true }).click();
   await page.locator('#goal-title').fill('Build my portfolio');

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DrawerModule } from 'primeng/drawer';
+import { Toasts } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
 import { Preferences } from '@lifequest/utilities';
 import { Icon, Logo } from '@lifequest/ui';
@@ -15,6 +16,7 @@ export class AdminShell {
   readonly auth = inject(AuthStore);
   readonly i18n = inject(Preferences);
   private readonly router = inject(Router);
+  private readonly toasts = inject(Toasts);
   readonly open = signal(false);
   readonly groups = [
     {
@@ -119,7 +121,11 @@ export class AdminShell {
     return !roles.length || roles.includes(this.auth.user()?.role ?? '');
   }
   async logout() {
-    await this.auth.logout();
-    await this.router.navigate(['/auth/login']);
+    try {
+      await this.auth.logout();
+      await this.router.navigate(['/auth/login']);
+    } catch (error) {
+      this.toasts.error(error);
+    }
   }
 }
