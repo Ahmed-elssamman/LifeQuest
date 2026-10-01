@@ -1,4 +1,6 @@
-# Verification record
+# Historical verification record — 26 September 2026
+
+> This record describes an earlier revision/deployment. It is superseded for current source verification by the [28 September final audit](../audit/final-audit.md). Its old dependency pairing, test counts and release claims are retained as historical evidence only.
 
 Verified on 26 September 2026 against production builds, isolated local PostgreSQL fixtures, and the running development applications connected to the configured Neon database. These are observed results for this workspace, not a certification for every browser or deployment.
 

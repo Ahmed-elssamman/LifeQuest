@@ -12,3 +12,21 @@ process.env['NODE_ENV'] = 'test';
 process.env['VITEST'] = 'true';
 
 process.env['UPLOAD_DIR'] = '.local/integration-uploads';
+
+// A developer's deployment credentials must never change test storage or send mail.
+for (const key of [
+  'VERCEL',
+  'BLOB_READ_WRITE_TOKEN',
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASSWORD',
+  'DEMO_EMAIL',
+  'DEMO_PASSWORD',
+  'DEMO_ADMIN_EMAIL',
+  'DEMO_ADMIN_PASSWORD',
+])
+  delete process.env[key];
+process.env['MAIL_MODE'] = 'development';
+process.env['WEB_ORIGIN'] = 'http://localhost:4200';
+process.env['ADMIN_ORIGIN'] = 'http://localhost:4201';
+process.env['APP_URL'] = 'http://localhost:4200';

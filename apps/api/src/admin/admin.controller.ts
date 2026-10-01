@@ -108,24 +108,7 @@ export class AdminController {
     @Body(new Validate(z.object({ reason: z.string().min(10).max(1000) }).strict()))
     input: { reason: string },
   ) {
-    return this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Challenge" WHERE id = ${id} FOR UPDATE`;
-      await this.db.lockActive(tx, user.id, ['SUPER_ADMIN', 'ADMIN', 'MODERATOR']);
-      await tx.challenge.updateMany({
-        where: { id, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
-        data: { status: 'CANCELLED' },
-      });
-      await tx.auditLog.create({
-        data: {
-          actorId: user.id,
-          action: 'CHALLENGE_MODERATED',
-          entity: 'Challenge',
-          entityId: id,
-          metadata: { reason: input.reason },
-        },
-      });
-      return { success: true };
-    });
+    return this.service.moderateChallenge(user, id, input.reason);
   }
   @Roles('SUPER_ADMIN', 'ADMIN', 'ANALYST') @Get('audit-logs') async audits(
     @Query(new Validate(paginationSchema)) query: InputOf<typeof paginationSchema>,

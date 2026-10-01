@@ -1,6 +1,6 @@
 import { Body, Controller, Inject, Param, Patch, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { InputOf, patchSchema, rewardSchema } from '@lifequest/contracts';
+import { InputOf, patchSchema, rewardSchema, rewardUpdateSchema } from '@lifequest/contracts';
 import { Database } from '../common/database';
 import { CurrentUser, Identity, Roles, Validate } from '../common/http';
 const articleSchema = z
@@ -65,8 +65,8 @@ export class ContentController {
   @Patch('rewards/:id') updateReward(
     @CurrentUser() user: Identity,
     @Param('id') id: string,
-    @Body(new Validate(patchSchema(rewardSchema).extend({ active: z.boolean().optional() })))
-    input: Partial<InputOf<typeof rewardSchema>> & { active?: boolean },
+    @Body(new Validate(rewardUpdateSchema))
+    input: InputOf<typeof rewardUpdateSchema>,
   ) {
     return this.db.staffAtomic(user.id, ['SUPER_ADMIN', 'ADMIN', 'CONTENT_MANAGER'], async (tx) => {
       const item = await tx.reward.update({ where: { id, userId: null }, data: input });

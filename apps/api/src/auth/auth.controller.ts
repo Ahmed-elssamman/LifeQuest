@@ -46,7 +46,7 @@ export class AuthController {
   ) {
     const result = await this.auth.register(input);
     cookie(response, result);
-    return { user: result.user };
+    return { user: result.user, verificationEmail: result.verificationEmail };
   }
   @Public()
   @Post('login')
