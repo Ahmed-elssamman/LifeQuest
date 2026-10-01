@@ -8,10 +8,12 @@ const secrets = [
   'SMTP_PASSWORD',
   'DEMO_PASSWORD',
   'DEMO_ADMIN_PASSWORD',
+  'BLOB_READ_WRITE_TOKEN',
+  'CRON_SECRET',
 ]
   .map((key) => process.env[key])
   .filter((value) => value && value.length > 10);
-const roots = ['apps', 'libs', 'prisma', 'docs', '.github'];
+const roots = ['apps', 'libs', 'prisma', 'docs', '.github', 'tools', 'tests'];
 const matches = [];
 function visit(path) {
   if (statSync(path).isDirectory()) {

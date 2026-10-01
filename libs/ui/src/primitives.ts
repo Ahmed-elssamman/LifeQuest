@@ -5,10 +5,12 @@ import { Icon } from './icon';
 @Component({
   selector: 'lq-logo',
   template:
-    '<span class="flex items-center gap-2.5"><svg aria-hidden="true" class="size-9 shrink-0" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#6b57cd"/><path d="M32 14c-11 0-17 7-17 18h17V14Zm4 18h14c0-11-5-18-14-18v18ZM32 36H15c0 10 7 15 17 15V36Zm4 0v15c9 0 14-6 14-15H36Z" fill="white"/></svg><span class="text-[22px] font-bold tracking-[-0.8px]">LifeQuest<span class="text-brand">.</span></span></span>',
+    '<span class="flex items-center gap-2.5"><svg aria-hidden="true" class="size-9 shrink-0" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#6b57cd"/><path d="M32 14c-11 0-17 7-17 18h17V14Zm4 18h14c0-11-5-18-14-18v18ZM32 36H15c0 10 7 15 17 15V36Zm4 0v15c9 0 14-6 14-15H36Z" fill="white"/></svg><span class="text-[22px] font-bold tracking-[-0.8px]">{{ i18n.t(\'MIRHAL\', \'مِرحال\') }}<span class="text-brand">.</span></span></span>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Logo {}
+export class Logo {
+  readonly i18n = inject(Preferences);
+}
 @Component({
   selector: 'lq-page-header',
   template:
@@ -36,7 +38,7 @@ export class EmptyState {
   selector: 'lq-error',
   imports: [Icon],
   template:
-    '<div role="alert" class="card flex flex-wrap items-center gap-4 border-rose-200 p-5"><lq-icon name="alert" /><div class="min-w-0 flex-1"><p class="font-semibold">{{ title() || i18n.t(\'A small detour\',\'عقبة صغيرة\') }}</p><p class="mt-1 text-sm text-muted">{{ message() }}</p></div><button class="btn btn-secondary" (click)="retry.emit()"><lq-icon name="refresh" [size]="16" />{{ retryLabel() || i18n.t(\'Try again\',\'حاول مجدداً\') }}</button></div>',
+    '<div role="alert" class="card flex flex-wrap items-center gap-4 border-rose-200 p-5"><lq-icon name="alert" /><div class="min-w-0 flex-1"><p class="font-semibold">{{ title() || i18n.t(\'A small detour\',\'عقبة صغيرة\') }}</p><p class="mt-1 text-sm text-muted">{{ message() }}</p></div><button type="button" class="btn btn-secondary" (click)="retry.emit()"><lq-icon name="refresh" [size]="16" />{{ retryLabel() || i18n.t(\'Try again\',\'حاول مجدداً\') }}</button></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ErrorState {

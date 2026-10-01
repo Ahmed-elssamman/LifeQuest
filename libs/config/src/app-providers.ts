@@ -1,19 +1,15 @@
 import { sessionInterceptor } from '../../auth/src/session-interceptor';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import base from '@primeng/themes/aura/base';
-import button from '@primeng/themes/aura/button';
-import dialog from '@primeng/themes/aura/dialog';
-import confirmdialog from '@primeng/themes/aura/confirmdialog';
-import toast from '@primeng/themes/aura/toast';
-import drawer from '@primeng/themes/aura/drawer';
-import datatable from '@primeng/themes/aura/datatable';
-import paginator from '@primeng/themes/aura/paginator';
-import select from '@primeng/themes/aura/select';
-import tooltip from '@primeng/themes/aura/tooltip';
+import type { ComponentsDesignTokens } from '@primeuix/themes/types';
+import base from '@primeuix/themes/aura/base';
+import button from '@primeuix/themes/aura/button';
+import dialog from '@primeuix/themes/aura/dialog';
+import confirmdialog from '@primeuix/themes/aura/confirmdialog';
+import toast from '@primeuix/themes/aura/toast';
+import drawer from '@primeuix/themes/aura/drawer';
 const Aura = {
   ...base,
   components: {
@@ -22,13 +18,9 @@ const Aura = {
     confirmdialog,
     toast,
     drawer,
-    datatable,
-    paginator,
-    select,
-    tooltip,
   },
 };
-import { definePreset } from '@primeng/themes';
+import { definePreset } from '@primeuix/themes';
 const LifeQuest = definePreset(Aura, {
   semantic: {
     primary: {
@@ -46,14 +38,13 @@ const LifeQuest = definePreset(Aura, {
     },
   },
 });
-export const sharedConfig: ApplicationConfig = {
+export const sharedConfig = (components: ComponentsDesignTokens = {}): ApplicationConfig => ({
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withFetch(), withInterceptors([sessionInterceptor])),
-    provideAnimationsAsync(),
     providePrimeNG({
       theme: {
-        preset: LifeQuest,
+        preset: definePreset(LifeQuest, { components }),
         options: {
           darkModeSelector: '.dark',
           cssLayer: { name: 'primeng', order: 'theme, base, primeng, components, utilities' },
@@ -64,4 +55,4 @@ export const sharedConfig: ApplicationConfig = {
     MessageService,
     ConfirmationService,
   ],
-};
+});

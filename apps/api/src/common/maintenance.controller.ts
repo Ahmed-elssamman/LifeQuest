@@ -4,12 +4,14 @@ import { timingSafeEqual } from 'node:crypto';
 import { Public } from './http';
 import { Database } from './database';
 import { ChallengeLifecycleService } from '../social/challenge-lifecycle.service';
+import { AttachmentCleanup } from '../core/attachment-cleanup';
 
 @Controller('internal/maintenance')
 export class MaintenanceController {
   constructor(
     @Inject(Database) private readonly db: Database,
     @Inject(ChallengeLifecycleService) private readonly lifecycle: ChallengeLifecycleService,
+    @Inject(AttachmentCleanup) private readonly cleanup: AttachmentCleanup,
   ) {}
   @Public()
   @Get()
@@ -29,6 +31,7 @@ export class MaintenanceController {
     });
     await this.db.session.deleteMany({ where: { expiresAt: { lt: now } } });
     await this.db.authToken.deleteMany({ where: { expiresAt: { lt: now } } });
+    await this.cleanup.drain();
     return { success: true };
   }
 }

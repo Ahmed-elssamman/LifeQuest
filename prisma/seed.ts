@@ -292,7 +292,7 @@ export async function seed(database = db) {
     await makeUser(
       process.env['DEMO_ADMIN_EMAIL'],
       process.env['DEMO_ADMIN_PASSWORD'],
-      'LifeQuest Admin',
+      'MIRHAL Admin',
       'SUPER_ADMIN',
     );
   if (!process.env['DEMO_EMAIL'] || !process.env['DEMO_PASSWORD']) return;
@@ -618,9 +618,7 @@ export async function seed(database = db) {
 if (process.env['VITEST'] !== 'true')
   seed()
     .then(() =>
-      console.log(
-        'LifeQuest reference and demo data are ready. Account credentials remain in .env.',
-      ),
+      console.log('MIRHAL reference and demo data are ready. Account credentials remain in .env.'),
     )
     .catch(() => {
       console.error('Seed failed. Check database connectivity and migration status.');

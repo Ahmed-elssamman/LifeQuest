@@ -95,3 +95,32 @@ export function needsRecovery(habit: HabitSchedule, logs: { date: Date }[], toda
   }
   return false;
 }
+
+/** Notice a repeated pattern without treating rest days or a new habit as failures. */
+export function repeatedMisses(habit: HabitSchedule, logs: { date: Date }[], today: Date): boolean {
+  const dates = new Set(logs.map((log) => log.date.toISOString().slice(0, 10)));
+  if (habit.frequency === 'WEEKLY') {
+    const monday = addDays(today, -((today.getUTCDay() + 6) % 7));
+    let missed = 0;
+    for (let week = 1; week <= 3; week++) {
+      const start = addDays(monday, -week * 7);
+      if (start < habit.startDate) return false;
+      const completed = [...dates].filter((date) => {
+        const day = dateOnly(date);
+        return day >= start && day < addDays(start, 7);
+      }).length;
+      if (completed < habit.weeklyTarget) missed++;
+    }
+    return missed >= 2;
+  }
+  let scheduled = 0;
+  let missed = 0;
+  for (let offset = 1; offset <= 21 && scheduled < 3; offset++) {
+    const day = addDays(today, -offset);
+    if (day < habit.startDate) break;
+    if (!isScheduled(habit, day)) continue;
+    scheduled++;
+    if (!dates.has(day.toISOString().slice(0, 10))) missed++;
+  }
+  return scheduled === 3 && missed >= 2;
+}

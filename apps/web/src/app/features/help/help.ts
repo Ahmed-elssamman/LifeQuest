@@ -8,12 +8,11 @@ import {
 } from '@angular/core';
 import { Api, Remote } from '@lifequest/data-access';
 import { RouterLink } from '@angular/router';
-import { TooltipModule } from 'primeng/tooltip';
-import { Icon, Logo } from '@lifequest/ui';
+import { ErrorState, Icon, Logo, Skeleton } from '@lifequest/ui';
 import { Preferences } from '@lifequest/utilities';
 @Component({
   selector: 'lq-help',
-  imports: [RouterLink, TooltipModule, Icon, Logo],
+  imports: [RouterLink, ErrorState, Icon, Logo, Skeleton],
   templateUrl: './help.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -117,14 +116,27 @@ export class HelpPage {
     },
     {
       icon: 'award',
-      title: 'Celebrate a new chapter',
-      ar: 'احتفل بفصل جديد',
-      text: 'Levels recognize your lifetime progress. Achievements celebrate meaningful milestones along the way.',
-      textAr: 'المستويات تعترف بتقدمك عبر الوقت. والإنجازات تحتفي بالمحطات المهمة في الرحلة.',
-      example: '“The first step” unlocks after your first habit action.',
-      exampleAr: 'يفتح إنجاز «الخطوة الأولى» بعد أول إتمام لعادة.',
+      title: 'Reach a new level',
+      ar: 'صل إلى مستوى جديد',
+      text: 'Levels recognize all the XP you have earned. Spending XP on a reward never lowers your level.',
+      textAr: 'المستويات تقدّر كل الخبرة التي اكتسبتها. إنفاق الخبرة على مكافأة لا يخفض مستواك.',
+      example: 'Earn 250 lifetime XP to reach “Finding rhythm”.',
+      exampleAr: 'اكتسب 250 نقطة خبرة عبر رحلتك لتصل إلى مستوى «مستمر».',
       label: 'THE MILESTONE',
       labelAr: 'المحطة',
+      link: '/achievements',
+    },
+    {
+      icon: 'award',
+      title: 'Celebrate meaningful achievements',
+      ar: 'احتفل بإنجازاتك المهمة',
+      text: 'Achievements recognize specific milestones, such as your first habit or a completed quest. Each achievement unlocks once and can award extra XP.',
+      textAr:
+        'الإنجازات تقدّر محطات محددة، مثل أول عادة أو إكمال مهمة أسبوعية. يُفتح كل إنجاز مرة واحدة وقد يمنحك خبرة إضافية.',
+      example: '“The first step” unlocks after your first habit action.',
+      exampleAr: 'يفتح إنجاز «الخطوة الأولى» بعد أول إتمام لعادة.',
+      label: 'THE ACHIEVEMENT',
+      labelAr: 'الإنجاز',
       link: '/achievements',
     },
     {
@@ -177,17 +189,61 @@ export class HelpPage {
       labelAr: 'البداية الجديدة',
       link: '/habit-lab',
     },
+    {
+      icon: 'gift',
+      title: 'Make rewards more personal',
+      ar: 'اجعل المكافآت أقرب إليك',
+      text: 'Choose favorites and share optional feedback after a reward. MIRHAL uses those choices to suggest other rewards you may enjoy.',
+      textAr:
+        'اختر مفضلاتك وشارك رأيك بعد المكافأة إن أردت. يستخدم مِرحال اختياراتك ليقترح مكافآت أخرى قد تعجبك.',
+      example: '“I loved the coffee reward. Show me a few similar ideas.”',
+      exampleAr: '«أعجبتني مكافأة القهوة. أرني أفكاراً مشابهة.»',
+      label: 'YOUR TASTE',
+      labelAr: 'ذوقك',
+      link: '/rewards',
+    },
+    {
+      icon: 'shield',
+      title: 'Keep your journey yours',
+      ar: 'اجعل رحلتك ملكاً لك',
+      text: 'Your reflections, mood, and exact behavior stay private. In challenges, you decide whether to share a score, progress, or streak.',
+      textAr:
+        'تأملاتك ومزاجك وتفاصيل سلوكك تبقى خاصة. في التحديات، أنت من يقرر مشاركة الدرجة أو التقدم أو الاستمرارية.',
+      example: '“Share my challenge score, but keep my journal private.”',
+      exampleAr: '«شارك درجتي في التحدي، واحتفظ بيومياتي خاصة.»',
+      label: 'YOUR CHOICE',
+      labelAr: 'اختيارك',
+      link: '/settings',
+    },
   ];
   readonly current = computed(() => this.steps[this.selected()]!);
   readonly visible = computed(() =>
-    this.beginner() ? this.steps.filter((_, i) => [0, 3, 4, 11].includes(i)) : this.steps,
+    this.beginner() ? this.steps.filter((_, i) => [0, 3, 4, 12].includes(i)) : this.steps,
   );
+  toggleBeginner() {
+    this.beginner.update((value) => !value);
+    if (!this.visible().includes(this.current())) this.selected.set(0);
+  }
+  readonly connections = [
+    { en: 'Goal', ar: 'هدف', step: 0 },
+    { en: 'Project', ar: 'مشروع', step: 1 },
+    { en: 'Task', ar: 'مهمة', step: 2 },
+    { en: 'Habit', ar: 'عادة', step: 3 },
+    { en: 'Daily check-in', ar: 'تأمل يومي', step: 4 },
+    { en: 'Quest', ar: 'مهمة أسبوعية', step: 5 },
+    { en: 'XP', ar: 'خبرة', step: 6 },
+    { en: 'Level', ar: 'مستوى', step: 7 },
+    { en: 'Achievement', ar: 'إنجاز', step: 8 },
+    { en: 'Reward', ar: 'مكافأة', step: 9 },
+    { en: 'Challenge', ar: 'تحدٍ', step: 10 },
+    { en: 'Monthly review', ar: 'مراجعة شهرية', step: 11 },
+  ];
   readonly faqs = [
     {
       q: 'Is this just a habit tracker?',
       qa: 'هل هو مجرد متتبع عادات؟',
-      a: 'LifeQuest connects outcomes, real work, repeated behavior, reflection, and recovery. Habits are one part of a complete personal operating system.',
-      aa: 'رحلة التوازن تربط النتائج والعمل الحقيقي والسلوك المتكرر والتأمل والتعافي. العادات جزء من نظام شخصي متكامل.',
+      a: 'MIRHAL connects outcomes, real work, repeated behavior, reflection, and recovery. Habits are one part of a complete personal operating system.',
+      aa: 'مِرحال تربط النتائج والعمل الحقيقي والسلوك المتكرر والتأمل والتعافي. العادات جزء من نظام شخصي متكامل.',
     },
     {
       q: 'What happens if I miss a day?',

@@ -22,7 +22,7 @@ const positive = z.number().finite().positive().max(1_000_000);
 const priority = z.enum(['LOW', 'MEDIUM', 'HIGH']);
 const status = z.enum(['PLANNED', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED']);
 export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(1_000_000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
   search: z.string().max(160).optional(),
   status: z.string().max(40).optional(),
@@ -229,9 +229,21 @@ export const rewardSchema = z
     cost: z.number().int().min(50).max(100000),
     icon: z.string().max(30).default('gift'),
     category: z.string().max(40).default('personal'),
+    cooldownDays: z.number().int().min(0).max(365).default(0),
+    contexts: z
+      .array(z.enum(['morning', 'afternoon', 'evening']))
+      .max(3)
+      .default([]),
     redemptionLimit: z.number().int().min(1).max(1000).nullish(),
     notes: text.default(''),
   })
+  .strict();
+export const rewardUpdateSchema = patchSchema(rewardSchema).extend({
+  active: z.boolean().optional(),
+});
+export const rewardRatingSchema = z.object({ rating: z.number().int().min(1).max(5) }).strict();
+export const rewardSavingsSchema = z
+  .object({ targetXp: z.number().int().min(50).max(100000).optional() })
   .strict();
 export const redeemSchema = z.object({ idempotencyKey: z.uuid() }).strict();
 export const challengeSchema = z

@@ -23,6 +23,8 @@ export class ChallengeScoringService {
   constructor(@Inject(Database) private readonly db: Database) {}
   async calculate(tx: Prisma.TransactionClient, challenge: ChallengeRecord, final = false) {
     if (!challenge.rules) throw new Error('Challenge has no rules');
+    if (![1, 2].includes(challenge.algorithmVersion))
+      throw new Error('Unsupported challenge algorithm version');
     const until = new Date(Math.min(Date.now(), challenge.endDate.getTime() - 1));
     for (const participant of challenge.participants.filter((item) => item.status === 'ACCEPTED')) {
       const timezone = participant.timezoneSnapshot ?? 'UTC';
@@ -49,15 +51,18 @@ export class ChallengeScoringService {
           targetSnapshot: true,
         },
       });
-      const ledger = await tx.xPTransaction.findMany({
-        where: {
-          userId: participant.userId,
-          type: 'HABIT',
-          direction: 'CREDIT',
-          createdAt: { gte: challenge.startDate, lte: until },
-        },
-        select: { source: true, amount: true, idempotencyKey: true },
-      });
+      const ledger =
+        challenge.algorithmVersion === 1
+          ? await tx.xPTransaction.findMany({
+              where: {
+                userId: participant.userId,
+                type: 'HABIT',
+                direction: 'CREDIT',
+                createdAt: { gte: challenge.startDate, lte: until },
+              },
+              select: { source: true, amount: true, idempotencyKey: true },
+            })
+          : [];
       // Group by the frozen timezone, and count at most one observation per habit/day.
       // Changing live schedules or timezone cannot add evidence to this challenge.
       const seen = new Set<string>();
@@ -69,23 +74,31 @@ export class ChallengeScoringService {
         seen.add(key);
         return true;
       });
-      const evidence = eligibleLogs.map((log) => ({
-        date: localDate(log.createdAt, timezone),
-        value:
-          challenge.mode === 'IMPROVEMENT' ||
-          challenge.mode === 'TARGET' ||
-          challenge.mode === 'COOPERATIVE'
-            ? log.value
-            : 1,
-        xp: Math.min(
-          participant.eligibleHabits.find((habit) => habit.habitId === log.habitId)?.xpReward ?? 0,
-          ledger.find(
-            (entry) =>
-              entry.source === log.habitId &&
-              entry.idempotencyKey.endsWith(log.date.toISOString().slice(0, 10)),
-          )?.amount ?? 0,
-        ),
-      }));
+      const evidence = eligibleLogs.map((log) => {
+        const snapshot = participant.eligibleHabits.find((habit) => habit.habitId === log.habitId)!;
+        return {
+          date: localDate(log.createdAt, timezone),
+          value:
+            challenge.mode === 'IMPROVEMENT' ||
+            challenge.mode === 'TARGET' ||
+            challenge.mode === 'COOPERATIVE'
+              ? log.value
+              : 1,
+          xp:
+            challenge.algorithmVersion === 2
+              ? log.minimum
+                ? Math.ceil(snapshot.xpReward / 2)
+                : snapshot.xpReward
+              : Math.min(
+                  snapshot.xpReward,
+                  ledger.find(
+                    (entry) =>
+                      entry.source === log.habitId &&
+                      entry.idempotencyKey.endsWith(log.date.toISOString().slice(0, 10)),
+                  )?.amount ?? 0,
+                ),
+        };
+      });
       const input = {
         evidence,
         expectedDays,
@@ -96,12 +109,12 @@ export class ChallengeScoringService {
       };
       const result = this.engine.calculate(challenge.mode, input);
       const evidenceHash = createHash('sha256')
-        .update(JSON.stringify({ version: this.engine.version, input }))
+        .update(JSON.stringify({ version: challenge.algorithmVersion, input }))
         .digest('hex');
       const data = {
         ...result,
         evidenceHash,
-        algorithmVersion: this.engine.version,
+        algorithmVersion: challenge.algorithmVersion,
         final,
         calculatedAt: new Date(),
       };

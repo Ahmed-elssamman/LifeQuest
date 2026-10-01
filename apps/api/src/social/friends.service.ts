@@ -90,6 +90,8 @@ export class FriendsService {
         where: { id, OR: [{ senderId: userId }, { receiverId: userId }] },
       });
       if (!friendship) throw new NotFoundException();
+      if (friendship.status === 'BLOCKED' && friendship.blockedById !== userId)
+        throw new ForbiddenException();
       if (action === 'block')
         return tx.friendship.update({
           where: { id },
