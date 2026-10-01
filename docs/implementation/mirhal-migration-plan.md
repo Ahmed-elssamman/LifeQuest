@@ -1,6 +1,6 @@
 # MIRHAL — مِرحال migration plan
 
-Status: phases 0–10 verified locally. The MIRHAL candidate and three pending additive migrations have not been deployed. Preserve all pre-existing working-tree edits until the changes are reviewed for release.
+Status: phases 0–10 verified locally. On 2 October 2026, the candidate was deployed to the customer/API and admin Vercel projects from the `feat/mirhal-migration` review branch. All three additive migrations were applied to Neon; the production flow verification passed and removed its temporary account and attachments. Pull request #1 remains open for code review before merging into `main`.
 
 ## Architecture and product structure
 
@@ -23,7 +23,7 @@ Keep the Nx modular monolith, separate Angular web/admin apps, NestJS REST API, 
 
 ## Cross-cutting decisions and risks
 
-- **Database:** phase 4 added the ninth migration after the eight existing migrations. Keep all history. The new fields/tables were replayed on the dedicated local database. Production migration deployment is a separate controlled release.
+- **Database:** phase 4 added the ninth migration after the eight existing migrations. Keep all history. The new fields/tables were replayed on the dedicated local database. Production migration deployment completed on 2 October 2026; all nine migrations are up to date.
 - **API:** preserve existing routes and response shapes. Add optional fields/endpoints with ownership checks; prevent IDOR and reward feedback for another user's redemption.
 - **Frontend/UX:** reuse `Preferences`, shared UI, resource states, route lazy loading and current visual tokens. Keep advanced features reachable while lowering navigation load. Translate every new user-facing string in English and Arabic.
 - **Testing:** add behavioral unit tests for ranking/selection and API tests for persistence/authorization; extend existing Playwright flows for the changed critical paths. Run phase gates before stacking changes.
