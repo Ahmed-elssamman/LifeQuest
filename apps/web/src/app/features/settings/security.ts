@@ -40,7 +40,7 @@ export class SecuritySettings {
       );
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'mirhal-my-journey.json';
+      a.download = 'lifequest-my-journey.json';
       a.click();
       URL.revokeObjectURL(url);
       this.toasts.success(

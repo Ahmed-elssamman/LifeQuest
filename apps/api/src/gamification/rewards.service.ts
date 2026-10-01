@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InputOf, rewardSchema, rewardUpdateSchema, paginationSchema } from '@lifequest/contracts';
+import { InputOf, rewardSchema, paginationSchema } from '@lifequest/contracts';
 import { pageArgs, pageResult } from '../core/ownership';
 import { Database } from '../common/database';
 import { XpService } from './xp.service';
@@ -26,39 +26,10 @@ export class RewardsService {
       }),
       this.db.reward.count({ where }),
     ]);
-    const favorites = await this.db.rewardFavorite.findMany({
-      where: { userId, rewardId: { in: items.map((item) => item.id) } },
-      select: { rewardId: true },
-    });
-    const favoriteIds = new Set(favorites.map((item) => item.rewardId));
-    return pageResult(
-      items.map((item) => ({ ...item, favorite: favoriteIds.has(item.id) })),
-      total,
-      query.page,
-      query.limit,
-    );
-  }
-  async mine(userId: string, query: InputOf<typeof paginationSchema>) {
-    const where = { userId };
-    const [items, total] = await Promise.all([
-      this.db.reward.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        ...pageArgs(query.page, query.limit),
-      }),
-      this.db.reward.count({ where }),
-    ]);
     return pageResult(items, total, query.page, query.limit);
   }
   create(userId: string, input: InputOf<typeof rewardSchema>) {
     return this.db.atomic(userId, (tx) => tx.reward.create({ data: { ...input, userId } }));
-  }
-  update(userId: string, rewardId: string, input: InputOf<typeof rewardUpdateSchema>) {
-    return this.db.atomic(userId, async (tx) => {
-      const reward = await tx.reward.findFirst({ where: { id: rewardId, userId } });
-      if (!reward) throw new NotFoundException();
-      return tx.reward.update({ where: { id: rewardId }, data: input });
-    });
   }
   async redeem(userId: string, rewardId: string, idempotencyKey: string) {
     const key = `redeem:${userId}:${idempotencyKey}`;
@@ -85,17 +56,6 @@ export class RewardsService {
           reward.redemptionLimit
       )
         throw new BadRequestException('You have reached the redemption limit for this reward.');
-      if (reward.cooldownDays > 0) {
-        const latest = await tx.rewardRedemption.findFirst({
-          where: { userId, rewardId, refundedAt: null },
-          orderBy: { createdAt: 'desc' },
-          select: { createdAt: true },
-        });
-        if (latest && Date.now() - latest.createdAt.getTime() < reward.cooldownDays * 86400000)
-          throw new BadRequestException(
-            'This reward will be ready again after its waiting period.',
-          );
-      }
       const redemption = await tx.rewardRedemption.create({
         data: { userId, rewardId, costSnapshot: reward.cost, idempotencyKey: key },
       });
@@ -145,7 +105,7 @@ export class RewardsService {
         throw new BadRequestException('Rewards can be undone within five minutes.');
       await tx.rewardRedemption.update({
         where: { id: redemptionId },
-        data: { refundedAt: new Date(), rating: null, ratedAt: null },
+        data: { refundedAt: new Date() },
       });
       await tx.xPTransaction.create({
         data: {

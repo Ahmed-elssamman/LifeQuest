@@ -31,8 +31,6 @@ const env = {
   DATABASE_URL: url.href,
   DIRECT_URL: url.href,
   NODE_ENV: 'test',
-  MAIL_MODE: 'development',
-  UPLOAD_DIR: '.local/e2e-uploads',
   PORT: '3433',
   WEB_ORIGIN: 'http://localhost:4300',
   ADMIN_ORIGIN: 'http://localhost:4301',
@@ -42,8 +40,6 @@ const env = {
   DEMO_ADMIN_EMAIL: credentials.adminEmail,
   DEMO_ADMIN_PASSWORD: credentials.adminPassword,
 };
-for (const key of ['VERCEL', 'BLOB_READ_WRITE_TOKEN', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'])
-  delete env[key];
 try {
   execFileSync('node_modules/.bin/prisma', ['migrate', 'deploy'], { env, stdio: 'pipe' });
 } catch {

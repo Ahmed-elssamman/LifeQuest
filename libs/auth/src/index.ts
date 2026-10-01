@@ -11,14 +11,9 @@ export class AuthStore {
   private readonly celebrations = inject(Celebrations);
   private readonly preferences = inject(Preferences);
   readonly user = signal<User | null>(null);
-  readonly verificationDeliveryFailed = signal(false);
-  dismissVerificationNotice() {
-    this.verificationDeliveryFailed.set(false);
-  }
   readonly languageSaving = signal(false);
   readonly languageError = signal('');
   private loading?: Promise<User | null>;
-  private revision = 0;
   constructor() {
     const destroyRef = inject(DestroyRef);
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
@@ -34,12 +29,11 @@ export class AuthStore {
   async load(): Promise<User | null> {
     if (this.user()) return this.user();
     if (this.loading) return this.loading;
-    const revision = this.revision;
     this.loading = this.api
       .get<User>('auth/me')
       .then((user) => {
-        if (revision === this.revision) this.setUser(user);
-        return this.user();
+        this.setUser(user);
+        return user;
       })
       .catch(() => null)
       .finally(() => {
@@ -48,7 +42,6 @@ export class AuthStore {
     return this.loading;
   }
   setUser(user: User) {
-    this.revision++;
     this.user.set(user);
     this.preferences.setLanguage(user.profile.language);
     this.preferences.setTheme(user.profile.theme);
@@ -82,36 +75,23 @@ export class AuthStore {
     displayName: string;
     timezone: string;
   }) {
-    const result = await this.api.post<{
-      user: User;
-      verificationEmail: 'sent' | 'disabled' | 'unavailable';
-    }>('auth/register', input);
+    const result = await this.api.post<{ user: User }>('auth/register', input);
     this.setUser(result.user);
-    this.verificationDeliveryFailed.set(result.verificationEmail === 'unavailable');
-    return result;
+    return result.user;
   }
   async logout() {
-    await this.api.post('auth/logout');
-    this.clearSession();
-  }
-  clearSession() {
-    this.revision++;
-    this.user.set(null);
-    this.verificationDeliveryFailed.set(false);
-    this.celebrations.dismiss();
+    try {
+      await this.api.post('auth/logout');
+    } finally {
+      this.user.set(null);
+      this.celebrations.dismiss();
+    }
   }
 }
 export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthStore);
   const router = inject(Router);
   return (await auth.load()) ? true : router.createUrlTree(['/auth/login']);
-};
-export const onboardingCompleteGuard: CanActivateFn = async () => {
-  const auth = inject(AuthStore);
-  const router = inject(Router);
-  const user = await auth.load();
-  if (!user) return router.createUrlTree(['/auth/login']);
-  return user.profile.onboardingCompletedAt ? true : router.createUrlTree(['/onboarding']);
 };
 export const adminGuard: CanActivateFn = async () => {
   const auth = inject(AuthStore);

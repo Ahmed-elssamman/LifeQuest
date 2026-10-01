@@ -46,8 +46,10 @@ export class MailAdapter {
           from: process.env['SMTP_FROM'],
           to,
           subject:
-            purpose === 'VERIFY_EMAIL' ? 'Confirm your MIRHAL email' : 'Reset your MIRHAL password',
-          text: `Continue your MIRHAL journey:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+            purpose === 'VERIFY_EMAIL'
+              ? 'Confirm your LifeQuest email'
+              : 'Reset your LifeQuest password',
+          text: `Continue your LifeQuest journey:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
         });
       } catch {
         throw new ServiceUnavailableException(

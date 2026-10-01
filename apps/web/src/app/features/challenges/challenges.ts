@@ -95,8 +95,8 @@ export class ChallengesPage {
       id: 'SCORE',
       en: 'Score battle',
       ar: 'تحدي النقاط',
-      text: 'Habit points fixed at the start, with fair daily caps.',
-      arText: 'نقاط عادات تُثبت عند البداية، بحدود يومية عادلة.',
+      text: 'Habit XP within fair daily caps.',
+      arText: 'خبرة العادات بحدود يومية عادلة.',
     },
     {
       id: 'IMPROVEMENT',

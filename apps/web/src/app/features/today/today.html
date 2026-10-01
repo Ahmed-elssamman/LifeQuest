@@ -11,112 +11,6 @@
     ><lq-icon name="plus" [size]="17" />{{ i18n.t('Add a habit', 'أضف عادة') }}</a
   ></lq-page-header
 >
-@if (nextAction(); as action) {
-  <section
-    class="mb-6 rounded-2xl border border-brand/20 bg-brand-soft p-5 sm:p-6"
-    aria-labelledby="next-step-title"
-  >
-    <div class="flex flex-wrap items-center gap-5">
-      <span
-        class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface text-brand"
-        ><lq-icon
-          [name]="action.kind === 'task' ? 'tasks' : action.kind === 'quest' ? 'flag' : 'sprout'"
-          [size]="24"
-      /></span>
-      <div class="min-w-0 flex-1">
-        <p class="eyebrow mb-2">{{ i18n.t('YOUR NEXT STEP', 'خطوتك التالية') }}</p>
-        <h2
-          id="next-step-title"
-          aria-live="polite"
-          class="break-words text-lg font-semibold leading-snug"
-        >
-          {{
-            action.kind === 'task'
-              ? action.task.title
-              : action.kind === 'quest'
-                ? action.item.title
-                : action.habit.name
-          }}
-        </h2>
-        @if (action.kind === 'task') {
-          <p class="mt-2 text-sm leading-6 text-muted">
-            {{
-              action.task.priority === 'HIGH'
-                ? i18n.t('A priority worth your attention today.', 'أولوية تستحق اهتمامك اليوم.')
-                : action.task.project?.title
-                  ? i18n.t('A step toward ', 'خطوة نحو ') + action.task.project?.title
-                  : i18n.t('One useful step toward your plans.', 'خطوة مفيدة نحو خططك.')
-            }}
-          </p>
-        } @else if (action.kind === 'quest') {
-          <p class="mt-2 text-sm leading-6 text-muted">
-            {{ i18n.t('A step toward ', 'خطوة نحو ') + action.quest.title }}
-          </p>
-        } @else {
-          <p class="mt-2 text-sm leading-6 text-muted">
-            {{
-              action.habit.whyItMatters ||
-                i18n.t('A small action for ', 'خطوة صغيرة من أجل ') +
-                  i18n.t(action.habit.area.name, action.habit.area.nameAr)
-            }}
-          </p>
-        }
-      </div>
-      <button
-        type="button"
-        class="btn btn-primary min-h-11 w-full sm:w-auto"
-        [disabled]="!!busy()"
-        (click)="
-          action.kind === 'task'
-            ? completeTask(action.task.id)
-            : action.kind === 'quest'
-              ? completeQuestItem(action.quest.id, action.item.id)
-              : complete(action.habit.id, false)
-        "
-      >
-        <lq-icon name="check" [size]="17" />{{ i18n.t('Mark done', 'سجّل الإنجاز') }}
-      </button>
-    </div>
-  </section>
-} @else if (
-  (habits.loading() && !habits.data()) ||
-  (tasks.loading() && !tasks.data()) ||
-  (quests.loading() && !quests.data() && questRequested())
-) {
-  <div class="mb-6"><lq-skeleton /></div>
-} @else if (quests.error() && questRequested()) {
-  <div class="mb-6"><lq-error [message]="quests.error()" (retry)="quests.load()" /></div>
-} @else if (habits.data() && tasks.data()) {
-  <section
-    class="mb-6 rounded-2xl border border-line bg-surface p-5 sm:p-6"
-    aria-labelledby="next-step-title"
-  >
-    <p class="eyebrow mb-2">{{ i18n.t('YOUR NEXT STEP', 'خطوتك التالية') }}</p>
-    <h2 id="next-step-title" class="text-lg font-semibold">
-      {{ i18n.t('Your plan is clear for now.', 'خطتك خالية الآن.') }}
-    </h2>
-    @if (checkedIn()) {
-      <p class="mt-2 text-sm leading-6 text-muted">
-        {{
-          i18n.t(
-            'You have done enough for today. Your progress is yours.',
-            'أنجزت ما يكفي اليوم. تقدمك ملك لك.'
-          )
-        }}
-      </p>
-      <a routerLink="/journey" class="btn btn-secondary mt-4 min-h-11">{{
-        i18n.t('See my journey', 'شاهد رحلتي')
-      }}</a>
-    } @else {
-      <p class="mt-2 text-sm leading-6 text-muted">
-        {{ i18n.t('Take a breath, or check in with yourself.', 'خذ نفساً، أو تأمل حالك اليوم.') }}
-      </p>
-      <a href="#daily-check-in" class="btn btn-secondary mt-4 min-h-11">{{
-        i18n.t('Check in', 'تأمل يومك')
-      }}</a>
-    }
-  </section>
-}
 <div class="mb-6 flex flex-wrap items-center gap-5 rounded-2xl bg-brand-soft p-5 sm:p-6">
   <span class="flex size-12 items-center justify-center rounded-xl bg-white/60 text-brand"
     ><lq-icon name="sprout" [size]="24"
@@ -206,10 +100,8 @@
           @for (task of todayTasks(); track task.id) {
             <div class="flex items-center gap-3 py-4">
               <button
-                type="button"
-                class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand"
+                class="flex size-7 shrink-0 items-center justify-center rounded-lg border border-line text-muted hover:border-brand hover:text-brand"
                 [attr.aria-label]="i18n.t('Complete ', 'إتمام ') + task.title"
-                [disabled]="!!busy()"
                 (click)="completeTask(task.id)"
               >
                 <lq-icon name="check" [size]="14" />
@@ -265,13 +157,11 @@
       <lq-icon name="arrow-right" class="ms-auto mt-1 text-muted" [size]="17"
     /></a>
   </div>
-  <div id="daily-check-in">
-    @if (checkIns.loading() && !checkIns.data()) {
-      <lq-skeleton />
-    } @else if (checkIns.error()) {
-      <lq-error [message]="checkIns.error()" (retry)="checkIns.load()" />
-    } @else {
-      <lq-check-in [done]="checkedIn()" (saved)="checkIns.load()" />
-    }
-  </div>
+  @if (checkIns.loading() && !checkIns.data()) {
+    <lq-skeleton />
+  } @else if (checkIns.error()) {
+    <lq-error [message]="checkIns.error()" (retry)="checkIns.load()" />
+  } @else {
+    <lq-check-in [done]="checkedIn()" (saved)="checkIns.load()" />
+  }
 </div>

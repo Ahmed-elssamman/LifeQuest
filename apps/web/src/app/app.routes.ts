@@ -1,6 +1,6 @@
 import { unsavedChangesGuard } from '@lifequest/forms';
 import { Routes } from '@angular/router';
-import { authGuard, onboardingCompleteGuard } from '@lifequest/auth';
+import { authGuard } from '@lifequest/auth';
 export const routes: Routes = [
   {
     path: '',
@@ -20,7 +20,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivate: [onboardingCompleteGuard],
+    canActivate: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),
     children: [
       {
@@ -111,5 +111,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'today' },
+  { path: '**', redirectTo: 'dashboard' },
 ];

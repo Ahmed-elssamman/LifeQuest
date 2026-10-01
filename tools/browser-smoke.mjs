@@ -24,7 +24,7 @@ try {
     await page.locator('#email').fill(email);
     await page.locator('#password').fill(password);
     await page.locator('button[type=submit]').click();
-    await page.waitForURL(admin ? '**/overview' : '**/today');
+    await page.waitForURL(admin ? '**/overview' : '**/dashboard');
     const routes = admin
       ? ['overview', 'users', 'challenges', 'feedback', 'quests', 'health']
       : ['dashboard', 'today', 'goals', 'projects', 'habits', 'habit-lab', 'journey'];

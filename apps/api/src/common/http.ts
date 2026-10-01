@@ -65,17 +65,6 @@ export class ApiExceptionFilter implements ExceptionFilter {
         code = typeof data['code'] === 'string' ? data['code'] : `HTTP_${status}`;
         details = data['details'];
       }
-    } else if (
-      error instanceof Error &&
-      'type' in error &&
-      (error.type === 'entity.parse.failed' || error.type === 'entity.too.large')
-    ) {
-      status = error.type === 'entity.too.large' ? 413 : 400;
-      code = error.type === 'entity.too.large' ? 'PAYLOAD_TOO_LARGE' : 'INVALID_JSON';
-      message =
-        error.type === 'entity.too.large'
-          ? 'The request is too large.'
-          : 'The request must contain valid JSON.';
     } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         status = 409;

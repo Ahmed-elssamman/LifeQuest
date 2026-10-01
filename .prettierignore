@@ -6,7 +6,7 @@ coverage
 package-lock.json
 prisma/migrations
 .local
-marketing-local
 playwright-report
 test-results
 .env*
+

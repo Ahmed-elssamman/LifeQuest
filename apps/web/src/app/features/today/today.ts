@@ -1,13 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Api, CheckIn, Habit, Page, Quest, Remote, Task, Toasts } from '@lifequest/data-access';
+import { Api, CheckIn, Habit, Page, Task, Toasts } from '@lifequest/data-access';
 import { Preferences } from '@lifequest/utilities';
 import {
   ErrorState,
@@ -20,7 +13,6 @@ import {
   Skeleton,
 } from '@lifequest/ui';
 import { CheckInForm } from './check-in';
-import { selectNextAction } from './next-action';
 @Component({
   selector: 'lq-today',
   imports: [
@@ -47,8 +39,6 @@ export class TodayPage {
   );
   readonly tasks = this.api.resource<Page<Task>>('tasks?today=true&limit=8');
   readonly checkIns = this.api.resource<CheckIn[]>('check-ins');
-  readonly quests = new Remote<Page<Quest>>(this.api, 'quests?limit=10');
-  readonly questRequested = signal(false);
   readonly busy = signal('');
   readonly scheduled = computed(() => this.habits.data()?.items ?? []);
   readonly scheduledCount = computed(() => this.habits.data()?.total ?? 0);
@@ -59,17 +49,6 @@ export class TodayPage {
       false,
   );
   readonly todayTasks = computed(() => this.tasks.data()?.items ?? []);
-  readonly nextAction = computed(() =>
-    selectNextAction(this.todayTasks(), this.scheduled(), this.quests.data()?.items ?? []),
-  );
-  constructor() {
-    effect(() => {
-      if (this.questRequested() || !this.tasks.data() || !this.habits.data()) return;
-      if (selectNextAction(this.todayTasks(), this.scheduled())) return;
-      this.questRequested.set(true);
-      void this.quests.load();
-    });
-  }
   habitPage(page: number) {
     void this.habits.load(`habits?today=true&limit=10&page=${page}`);
   }
@@ -93,8 +72,6 @@ export class TodayPage {
     }
   }
   async completeTask(id: string) {
-    if (this.busy()) return;
-    this.busy.set(id);
     try {
       const result = await this.api.patch<{ awarded: number }>(`tasks/${id}`, {
         status: 'COMPLETED',
@@ -106,26 +83,6 @@ export class TodayPage {
       await this.tasks.load();
     } catch (error) {
       this.toasts.error(error);
-    } finally {
-      this.busy.set('');
-    }
-  }
-  async completeQuestItem(questId: string, itemId: string) {
-    if (this.busy()) return;
-    this.busy.set(itemId);
-    try {
-      const result = await this.api.post<{ awarded: number }>(
-        `quests/${questId}/items/${itemId}/complete`,
-      );
-      this.toasts.success(
-        this.i18n.t('One more step in your journey.', 'خطوة أخرى في رحلتك.'),
-        result.awarded ? `+${result.awarded} XP` : undefined,
-      );
-      await this.quests.load();
-    } catch (error) {
-      this.toasts.error(error);
-    } finally {
-      this.busy.set('');
     }
   }
 }

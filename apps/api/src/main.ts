@@ -4,7 +4,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
 import { ChallengesService } from './social/challenges.service';
-import { AttachmentCleanup } from './core/attachment-cleanup';
 async function main() {
   if (!process.env['DATABASE_URL']) throw new Error('DATABASE_URL is required.');
   const app = configureApp(
@@ -13,14 +12,12 @@ async function main() {
   app.enableShutdownHooks();
   await app.listen(Number(process.env['PORT'] ?? 3333), '0.0.0.0');
   const challenges = app.get(ChallengesService);
-  const cleanup = app.get(AttachmentCleanup);
   let running = false;
   const timer = setInterval(async () => {
     if (running) return;
     running = true;
     try {
       await challenges.tick();
-      await cleanup.drain();
     } catch {
       console.error(JSON.stringify({ level: 'error', code: 'CHALLENGE_TICK_FAILED' }));
     } finally {

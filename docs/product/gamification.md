@@ -1,6 +1,6 @@
 # Progression without pressure
 
-MIRHAL rewards showing up. Missing a day is information; Habit Lab and recovery prompts help the user choose a smaller next step. Streaks never replace broader adherence or reflection.
+LifeQuest rewards showing up. Missing a day is information; Habit Lab and recovery prompts help the user choose a smaller next step. Streaks never replace broader adherence or reflection.
 
 XP transactions are append-only credits/debits with type, source, amount, time and idempotency key. Available balance is credits minus debits. Lifetime earned XP excludes reward refunds and stays independent from spending; levels therefore do not fall when a reward is redeemed. Level configuration is database data.
 

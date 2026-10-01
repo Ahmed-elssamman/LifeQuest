@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { DestroyRef, Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class Preferences {
   private readonly document = inject(DOCUMENT);
@@ -8,7 +8,6 @@ export class Preferences {
   readonly theme = signal<'light' | 'dark' | 'system'>('system');
   readonly rtl = computed(() => this.language() === 'ar');
   constructor() {
-    const destroy = inject(DestroyRef);
     if (this.browser) {
       try {
         const language = localStorage.getItem('lq-language');
@@ -19,10 +18,9 @@ export class Preferences {
         /* Private browsing may disable storage. */
       }
       this.apply();
-      const scheme = globalThis.matchMedia?.('(prefers-color-scheme: dark)');
-      const apply = () => this.apply();
-      scheme?.addEventListener('change', apply);
-      destroy.onDestroy(() => scheme?.removeEventListener('change', apply));
+      globalThis
+        .matchMedia?.('(prefers-color-scheme: dark)')
+        .addEventListener('change', () => this.apply());
     }
   }
   t(en: string, ar: string) {

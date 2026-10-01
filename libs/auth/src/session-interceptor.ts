@@ -15,7 +15,7 @@ export const sessionInterceptor: HttpInterceptorFn = (request, next) => {
         !request.url.includes('/auth/login') &&
         !request.url.includes('/auth/me')
       ) {
-        auth.clearSession();
+        auth.user.set(null);
         void router.navigate(['/auth/login']);
       }
       return throwError(() => error);

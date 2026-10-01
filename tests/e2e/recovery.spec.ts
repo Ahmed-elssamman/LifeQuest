@@ -74,26 +74,3 @@ test('a temporary habits failure explains recovery and retry restores the real d
   await expect(page.locator('lq-error')).toHaveCount(0);
   await expect(page.locator('article').first()).toBeVisible();
 });
-
-test('repeated missed commitments offer a smaller editable experiment', async ({ page }) => {
-  await login(page);
-  const startDate = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
-  const created = await page.request.post('/api/habits', {
-    headers: { Origin: 'http://localhost:4300' },
-    data: {
-      name: 'Gentle recovery example',
-      areaId: 'area-body',
-      target: 30,
-      unit: 'minutes',
-      startDate,
-    },
-  });
-  expect(created.ok()).toBe(true);
-  await page.goto('/habit-lab');
-  const habit = page.locator('article').filter({ hasText: 'Gentle recovery example' });
-  await expect(habit.getByText('Several planned days did not happen.')).toBeVisible();
-  await habit.getByRole('button', { name: 'Try a smaller experiment' }).click();
-  await expect(page.locator('#lab-target')).toHaveValue('10');
-  await expect(page.locator('#lab-reason')).toHaveValue('');
-  await expect(page.getByRole('button', { name: 'Start this experiment' })).toBeDisabled();
-});

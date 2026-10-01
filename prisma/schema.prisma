@@ -1,5 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
+  provider = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -175,8 +175,6 @@ model User {
   achievements        UserAchievement[]
   rewards             Reward[]
   redemptions         RewardRedemption[]
-  rewardFavorites     RewardFavorite[]
-  rewardSavings       RewardSavingsTarget[]
   friendshipsSent     Friendship[]           @relation("FriendshipSender")
   friendshipsReceived Friendship[]           @relation("FriendshipReceiver")
   challenges          Challenge[]
@@ -221,7 +219,6 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId, expiresAt])
-  @@index([expiresAt])
 }
 
 model AuthToken {
@@ -235,7 +232,6 @@ model AuthToken {
   createdAt DateTime     @default(now())
 
   @@index([userId, purpose])
-  @@index([expiresAt])
 }
 
 model LifeArea {
@@ -341,9 +337,6 @@ model Milestone {
   completed Boolean   @default(false)
   dueDate   DateTime? @db.Date
   createdAt DateTime  @default(now())
-
-  @@index([goalId])
-  @@index([projectId])
 }
 
 model Project {
@@ -394,8 +387,6 @@ model Task {
 
   @@index([userId, status, dueDate])
   @@index([projectId])
-  @@index([goalId])
-  @@index([parentId])
 }
 
 model Habit {
@@ -451,7 +442,6 @@ model HabitLog {
 
   @@unique([habitId, date])
   @@index([userId, date])
-  @@index([userId, createdAt])
 }
 
 model HabitExperiment {
@@ -605,13 +595,9 @@ model Reward {
   active          Boolean            @default(true)
   icon            String             @default("gift")
   category        String             @default("personal")
-  cooldownDays    Int                @default(0)
-  contexts        String[]           @default([])
   redemptionLimit Int?
   notes           String             @default("")
   redemptions     RewardRedemption[]
-  favorites       RewardFavorite[]
-  savingsTargets  RewardSavingsTarget[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -627,33 +613,8 @@ model RewardRedemption {
   costSnapshot   Int
   idempotencyKey String    @unique
   refundedAt     DateTime?
-  rating         Int?
-  ratedAt        DateTime?
   createdAt      DateTime  @default(now())
 
-  @@index([userId, createdAt])
-}
-
-model RewardFavorite {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rewardId  String
-  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@id([userId, rewardId])
-}
-
-model RewardSavingsTarget {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rewardId  String
-  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  targetXp  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@id([userId, rewardId])
   @@index([userId, createdAt])
 }
 
@@ -802,8 +763,6 @@ model FeedbackReply {
   internal   Boolean  @default(false)
   authorRole Role
   createdAt  DateTime @default(now())
-
-  @@index([feedbackId, createdAt])
 }
 
 model FeedbackAttachment {
@@ -814,16 +773,6 @@ model FeedbackAttachment {
   mimeType   String
   size       Int
   storageKey String
-
-  @@index([feedbackId])
-}
-
-model AttachmentDeletion {
-  storageKey String   @id
-  createdAt  DateTime @default(now())
-  retryAt    DateTime @default(now())
-
-  @@index([retryAt, createdAt])
 }
 
 model AuditLog {
@@ -924,10 +873,9 @@ model QuestTemplateItem {
 
 // Ephemeral hashed rate-limit counters shared by serverless instances.
 model RateLimitBucket {
-  key          String    @id
-  hits         Int
-  expiresAt    DateTime
+  key String @id
+  hits Int
+  expiresAt DateTime
   blockedUntil DateTime?
-
   @@index([expiresAt])
 }

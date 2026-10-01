@@ -1,4 +1,3 @@
-import datatable from '@primeuix/themes/aura/datatable';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { mergeApplicationConfig } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
@@ -7,7 +6,7 @@ import { App } from './app/app';
 import { routes } from './app/app.routes';
 bootstrapApplication(
   App,
-  mergeApplicationConfig(sharedConfig({ datatable }), {
+  mergeApplicationConfig(sharedConfig, {
     providers: [provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' }))],
   }),
 ).catch((error) =>

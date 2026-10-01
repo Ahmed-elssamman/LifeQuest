@@ -61,9 +61,7 @@ beforeAll(async () => {
     env: process.env,
     stdio: 'pipe',
   });
-  app = configureApp(
-    await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
-  );
+  app = configureApp(await NestFactory.create(AppModule, { logger: false, bodyParser: false }));
   await app.init();
   db = app.get(Database);
   await seed(db);
@@ -745,30 +743,6 @@ describe('Authentication recovery, privacy and operational control', () => {
   });
   it('exports private data, honors notification opt-out and erases personal content', async () => {
     await patch('profile', { bio: 'Sensitive biography', notificationsEnabled: false });
-    const reward = await post('rewards', member.cookie, { title: 'Private comfort', cost: 50 });
-    expect(reward.status).toBe(201);
-    await http()
-      .put(`/api/rewards/${reward.body.id}/favorite`)
-      .set('Origin', origin)
-      .set('Cookie', member.cookie)
-      .send({})
-      .expect(200);
-    await http()
-      .put(`/api/rewards/${reward.body.id}/save`)
-      .set('Origin', origin)
-      .set('Cookie', member.cookie)
-      .send({ targetXp: 100 })
-      .expect(200);
-    const redemption = await db.rewardRedemption.create({
-      data: {
-        userId: member.id,
-        rewardId: reward.body.id,
-        costSnapshot: 50,
-        idempotencyKey: `erasure:${member.id}`,
-        rating: 5,
-        ratedAt: new Date(),
-      },
-    });
     await post('journey/reflection', member.cookie, {
       year: 2026,
       month: 9,
@@ -804,11 +778,6 @@ describe('Authentication recovery, privacy and operational control', () => {
     expect((await get('auth/me')).status).toBe(401);
     expect((await db.profile.findUniqueOrThrow({ where: { userId: member.id } })).bio).toBe('');
     expect(await db.monthJourney.count({ where: { userId: member.id } })).toBe(0);
-    expect(await db.rewardFavorite.count({ where: { userId: member.id } })).toBe(0);
-    expect(await db.rewardSavingsTarget.count({ where: { userId: member.id } })).toBe(0);
-    expect(
-      (await db.rewardRedemption.findUniqueOrThrow({ where: { id: redemption.id } })).rating,
-    ).toBeNull();
     expect(
       (await db.habit.findMany({ where: { userId: member.id } })).every(
         (item) => item.name === 'Deleted habit',

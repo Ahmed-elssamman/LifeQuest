@@ -64,25 +64,19 @@ export class HabitLabPage {
     commitment: ['flexible'],
     action: ['ADJUST'],
   });
-  diagnose(habit: Habit, gentler = false) {
+  diagnose(habit: Habit) {
     this.selected.set(habit);
     this.open.set(true);
     this.form.reset({
       reason: habit.failureReason,
       hypothesis: habit.nextExperiment,
-      adjustment: gentler
-        ? this.i18n.t('Try a smaller step at a better time.', 'جرّب خطوة أصغر في وقت أنسب.')
-        : '',
-      target:
-        gentler && habit.target > 1 ? Math.max(1, Math.floor(habit.target / 3)) : habit.target,
+      adjustment: '',
+      target: habit.target,
       minimumAction: habit.minimumAction,
       preferredTime: habit.preferredTime,
       frequency: habit.frequency,
       scheduleDays: habit.scheduleDays,
-      weeklyTarget:
-        gentler && habit.frequency === 'WEEKLY' && habit.weeklyTarget > 1
-          ? habit.weeklyTarget - 1
-          : habit.weeklyTarget,
+      weeklyTarget: habit.weeklyTarget,
       commitment: habit.commitment,
       action: 'ADJUST',
     });

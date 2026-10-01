@@ -9,7 +9,7 @@ import { sharedConfig } from '../../../libs/config/src/app-providers';
 export default (context: BootstrapContext) =>
   bootstrapApplication(
     App,
-    mergeApplicationConfig(sharedConfig(), {
+    mergeApplicationConfig(sharedConfig, {
       providers: [
         provideRouter(routes),
         provideClientHydration(withEventReplay()),

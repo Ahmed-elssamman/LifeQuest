@@ -21,16 +21,16 @@
         }}</span
       >
       <h1 class="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-        {{ i18n.t('How MIRHAL works', 'كيف يعمل مِرحال؟') }}<br /><span class="text-brand">{{
+        {{ i18n.t('A life in balance.', 'حياة متوازنة.') }}<br /><span class="text-brand">{{
           i18n.t('One small step at a time.', 'خطوة صغيرة في كل مرة.')
         }}</span>
       </h1>
       <p class="mt-5 text-sm leading-7 text-muted">
         {{
           i18n.t(
-            'MIRHAL brings the pieces of your life together. Here’s how to make it yours,
+            'LifeQuest brings the pieces of your life together. Here’s how to make it yours,
         without trying to do everything at once.',
-            'مِرحال تجمع أجزاء حياتك معاً. إليك كيف
+            'رحلة التوازن تجمع أجزاء حياتك معاً. إليك كيف
         تجعلها رحلتك، دون محاولة إنجاز كل شيء دفعة واحدة.'
           )
         }}
@@ -40,7 +40,7 @@
       <button
         class="btn btn-secondary !whitespace-normal text-xs"
         [attr.aria-pressed]="beginner()"
-        (click)="toggleBeginner()"
+        (click)="beginner.set(!beginner())"
       >
         <lq-icon [name]="beginner() ? 'sprout' : 'map'" [size]="16" />{{
           beginner()
@@ -79,44 +79,40 @@
           </button>
         }
       </nav>
-      @for (step of [current()]; track step) {
-        <article class="card flex flex-col overflow-hidden" aria-live="polite">
-          <div
-            class="relative flex min-h-52 items-center justify-center overflow-hidden bg-[#302943] p-8"
+      <article class="card flex flex-col overflow-hidden">
+        <div
+          class="relative flex min-h-52 items-center justify-center overflow-hidden bg-[#302943] p-8"
+        >
+          <div class="absolute size-60 rounded-full border border-white/10"></div>
+          <div class="absolute size-40 rounded-full border border-dashed border-white/15"></div>
+          <span
+            class="relative flex size-24 items-center justify-center rounded-[28px] border border-white/20 bg-white/10 text-[#d1c4ff]"
+            ><lq-icon [name]="current().icon" [size]="44" /></span
+          ><span
+            class="absolute bottom-5 start-6 text-[10px] font-medium uppercase tracking-widest text-white/50"
+            >{{ i18n.t(current().label, current().labelAr) }}</span
+          ><span class="absolute bottom-5 end-6 text-xs text-white/50"
+            >{{ selected() + 1 }} / 12</span
           >
-            <div class="absolute size-60 rounded-full border border-white/10"></div>
-            <div class="absolute size-40 rounded-full border border-dashed border-white/15"></div>
-            <span
-              class="relative flex size-24 animate-enter items-center justify-center rounded-[28px] border border-white/20 bg-white/10 text-[#d1c4ff]"
-              ><lq-icon [name]="current().icon" [size]="44" /></span
-            ><span
-              class="absolute bottom-5 start-6 text-[10px] font-medium uppercase tracking-widest text-white/70"
-              >{{ i18n.t(current().label, current().labelAr) }}</span
-            ><span class="absolute bottom-5 end-6 text-xs text-white/70"
-              >{{ selected() + 1 }} / {{ steps.length }}</span
-            >
+        </div>
+        <div class="flex flex-1 flex-col p-6 sm:p-9">
+          <h2 class="text-2xl font-semibold tracking-tight">
+            {{ i18n.t(current().title, current().ar) }}
+          </h2>
+          <p class="mt-4 text-sm leading-7 text-muted">
+            {{ i18n.t(current().text, current().textAr) }}
+          </p>
+          <div class="my-6 rounded-xl border-s-4 border-brand bg-brand-soft p-5 text-sm leading-7">
+            {{ i18n.t(current().example, current().exampleAr) }}
           </div>
-          <div class="flex flex-1 flex-col p-6 sm:p-9">
-            <h2 class="text-2xl font-semibold tracking-tight">
-              {{ i18n.t(current().title, current().ar) }}
-            </h2>
-            <p class="mt-4 text-sm leading-7 text-muted">
-              {{ i18n.t(current().text, current().textAr) }}
-            </p>
-            <div
-              class="my-6 rounded-xl border-s-4 border-brand bg-brand-soft p-5 text-sm leading-7"
-            >
-              {{ i18n.t(current().example, current().exampleAr) }}
-            </div>
-            <a
-              [routerLink]="current().link"
-              class="mt-auto inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-brand"
-              >{{ i18n.t('Try this step', 'جرّب هذه الخطوة')
-              }}<lq-icon name="arrow-right" [size]="15"
-            /></a>
-          </div>
-        </article>
-      }
+          <a
+            [routerLink]="current().link"
+            class="mt-auto inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-brand"
+            >{{ i18n.t('Try this step', 'جرّب هذه الخطوة')
+            }}<lq-icon name="arrow-right" [size]="15"
+          /></a>
+        </div>
+      </article>
     </section>
     <section class="mt-14">
       <div class="mb-6 text-center">
@@ -130,22 +126,53 @@
       <div
         class="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-surface p-6"
       >
-        @for (item of connections; track item.en; let last = $last) {
-          <button
-            type="button"
-            (click)="beginner.set(false); selected.set(item.step)"
-            [attr.aria-pressed]="selected() === item.step"
-            class="btn btn-secondary flex-col text-xs"
+        @for (
+          item of [
+            {
+              icon: 'target',
+              en: 'Goal',
+              ar: 'هدف',
+              tip: 'Your meaningful
+        outcome',
+            },
+            {
+              icon: 'folder',
+              en: 'Project',
+              ar: 'مشروع',
+              tip: 'A body of
+        work',
+            },
+            {
+              icon: 'tasks',
+              en: 'Task',
+              ar: 'مهمة',
+              tip: 'One concrete
+        action',
+            },
+            {
+              icon: 'sprout',
+              en: 'Habit',
+              ar: 'عادة',
+              tip: 'A repeated
+        behavior',
+            },
+            { icon: 'sun', en: 'Reflect', ar: 'تأمل', tip: 'Learn and adjust' },
+          ];
+          track item.en;
+          let last = $last
+        ) {
+          <div
+            [pTooltip]="item.tip"
+            tabindex="0"
+            class="flex min-w-20 flex-col items-center gap-3 rounded-xl bg-canvas p-4"
           >
-            <lq-icon [name]="steps[item.step]!.icon" class="text-brand" [size]="22" />
-            {{ i18n.t(item.en, item.ar) }}
-          </button>
+            <lq-icon [name]="item.icon" class="text-brand" [size]="22" /><span
+              class="text-xs font-medium"
+              >{{ i18n.t(item.en, item.ar) }}</span
+            >
+          </div>
           @if (!last) {
-            <lq-icon
-              [name]="i18n.rtl() ? 'arrow-left' : 'arrow-right'"
-              class="text-muted"
-              [size]="17"
-            />
+            <lq-icon name="arrow-right" class="text-muted" [size]="17" />
           }
         }
       </div>
@@ -205,12 +232,6 @@
         {{ i18n.t('A few things you might be wondering.', 'بعض الأشياء التي قد تتساءل عنها.') }}
       </h2>
       <div class="space-y-3">
-        @if (articles.loading() && !articles.data()) {
-          <lq-skeleton />
-        }
-        @if (articles.error()) {
-          <lq-error [message]="articles.error()" (retry)="articles.load()" />
-        }
         @for (article of articles.data(); track article.id) {
           <details class="card p-5">
             <summary class="cursor-pointer text-sm font-semibold">

@@ -1,40 +1,25 @@
-import { credentials, login, appearance, inspectLayout } from './helpers';
+import { credentials, login, appearance } from './helpers';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { z } from 'zod';
 test('register, onboard, create linked work, build a habit, reflect, earn and redeem XP', async ({
   page,
 }) => {
   const email = 'new-' + randomBytes(6).toString('hex') + '@e2e.test';
   const password = randomBytes(18).toString('base64url');
-  // The backend failure case is covered against PostgreSQL; exercise its UI notice here.
-  await page.route('**/api/auth/register', async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      json: { ...(await response.json()), verificationEmail: 'unavailable' },
-    });
-  });
   await page.goto('/auth/register');
   await page.locator('#displayName').fill('New Explorer');
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(password);
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL(/onboarding$/);
-  await expect(
-    page.getByText('Verification email could not be sent. You can resend it from Settings.'),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Growth', exact: true }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Skip for now' }).click();
+  for (let step = 0; step < 6; step++) {
+    if (step === 1) await page.getByRole('button', { name: 'Growth', exact: true }).click();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  }
   await page.getByRole('button', { name: 'Begin my journey' }).click();
-  await expect(page).toHaveURL(/today$/);
-  await expect(
-    page.getByText('Verification email could not be sent. You can resend it from Settings.'),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(page).toHaveURL(/dashboard$/);
   await page.goto('/goals');
   await page.getByRole('button', { name: 'New goal', exact: true }).click();
   await page.locator('#goal-title').fill('Build my portfolio');
@@ -90,22 +75,16 @@ test('register, onboard, create linked work, build a habit, reflect, earn and re
   await page.locator('#reward-title').fill('A quiet coffee');
   await page.locator('#reward-cost').fill('50');
   await page.locator('p-dialog button[type=submit]').click();
-  const rewardCard = page.locator('article').filter({ hasText: 'A quiet coffee' });
-  await rewardCard.getByRole('button', { name: '☆ Favorite' }).click();
-  await expect(rewardCard.getByRole('button', { name: '★ Favorite' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await rewardCard.getByRole('button', { name: 'Save for this' }).click();
-  await expect(page.getByRole('heading', { name: 'Saving for something' })).toBeVisible();
-  await rewardCard.getByRole('button', { name: 'Enjoy this reward', exact: true }).click();
+  await page
+    .locator('article')
+    .filter({ hasText: 'A quiet coffee' })
+    .getByRole('button', { name: 'Enjoy this reward', exact: true })
+    .click();
   await page
     .getByRole('alertdialog', { name: 'You’ve earned a little joy.' })
     .getByRole('button', { name: 'Enjoy this reward', exact: true })
     .click();
   await expect(page.getByText('A quiet coffee').last()).toBeVisible();
-  await page.getByLabel('How was it?').selectOption('5');
-  await expect(page.getByLabel('How was it?')).toHaveValue('5');
   await page.goto('/feedback');
   await page.locator('#feedback-title').fill('Make the next step clearer');
   await page
@@ -176,7 +155,7 @@ test('desktop/mobile routes remain usable, accessible and free of horizontal ove
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await login(page);
-  for (const width of [320, 360, 390, 412, 480, 768, 1024, 1280, 1440, 1600]) {
+  for (const width of [320, 360, 390, 412, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['dashboard', 'today', 'habits', 'challenges', 'help']) {
       await page.goto('/' + route);
@@ -222,17 +201,6 @@ test('friends accept invitations and make server-scored challenge progress', asy
     },
   });
   expect(registration.ok()).toBe(true);
-  const areasResponse = await peer.request.get('/api/life-areas');
-  expect(areasResponse.ok()).toBe(true);
-  const [area] = z
-    .array(z.object({ id: z.string() }))
-    .min(1)
-    .parse(await areasResponse.json());
-  const onboarding = await peer.request.post('/api/onboarding', {
-    headers: { Origin: 'http://localhost:4300' },
-    data: { areaIds: [area.id] },
-  });
-  expect(onboarding.ok()).toBe(true);
   await login(page);
   await page.goto('/friends');
   await page.getByRole('button', { name: 'Add a friend', exact: true }).click();
@@ -356,7 +324,6 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )
         findings.push({ route, mode, rule: 'horizontal-overflow', targets: [] });
-      await inspectLayout(page, 'web', route, mode);
       const result = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();
@@ -417,7 +384,6 @@ test('administration remains accessible on mobile and desktop', async ({ page })
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )
         findings.push({ route, mode, rule: 'overflow' });
-      await inspectLayout(page, 'admin', route, mode);
       const result = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();

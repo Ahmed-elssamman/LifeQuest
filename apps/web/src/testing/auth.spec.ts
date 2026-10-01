@@ -34,11 +34,7 @@ const user: User = {
   },
 };
 beforeEach(() => {
-  vi.stubGlobal('matchMedia', () => ({
-    matches: false,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }));
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn() }));
   TestBed.configureTestingModule({
     providers: [
       provideHttpClient(withInterceptors([sessionInterceptor])),
@@ -52,38 +48,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe('Authentication state and navigation', () => {
-  it('keeps registration authenticated and exposes a verification retry when delivery fails', async () => {
-    const auth = TestBed.inject(AuthStore);
-    const pending = auth.register({
-      email: user.email,
-      password: 'a-long-test-password',
-      displayName: 'Explorer',
-      timezone: 'UTC',
-    });
-    TestBed.inject(HttpTestingController)
-      .expectOne('/api/auth/register')
-      .flush({ user, verificationEmail: 'unavailable' });
-    expect((await pending).verificationEmail).toBe('unavailable');
-    expect(auth.user()).toEqual(user);
-  });
-  it('ignores a session response that arrives after session invalidation', async () => {
-    const auth = TestBed.inject(AuthStore);
-    const pending = auth.load();
-    auth.clearSession();
-    TestBed.inject(HttpTestingController).expectOne('/api/auth/me').flush(user);
-    expect(await pending).toBeNull();
-    expect(auth.user()).toBeNull();
-  });
-  it('keeps the session visible when logout fails so the user can retry', async () => {
-    const auth = TestBed.inject(AuthStore);
-    auth.setUser(user);
-    const pending = auth.logout();
-    TestBed.inject(HttpTestingController)
-      .expectOne('/api/auth/logout')
-      .flush({}, { status: 503, statusText: 'Unavailable' });
-    await expect(pending).rejects.toBeInstanceOf(HttpErrorResponse);
-    expect(auth.user()).toEqual(user);
-  });
   it('persists the header language choice and preserves it on session reload', async () => {
     const auth = TestBed.inject(AuthStore);
     auth.setUser(user);

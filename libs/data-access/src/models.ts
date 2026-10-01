@@ -133,26 +133,12 @@ export interface Habit {
   completedToday: boolean;
   scheduledToday: boolean;
   recoverySuggested: boolean;
-  recoveryPattern: boolean;
   logs: HabitLog[];
   experiments: Experiment[];
   failureReason: string;
   nextExperiment: string;
   xpReward: number;
 }
-export type HabitSummary = Pick<
-  Habit,
-  | 'id'
-  | 'name'
-  | 'area'
-  | 'target'
-  | 'unit'
-  | 'xpReward'
-  | 'completedToday'
-  | 'adherence'
-  | 'streak'
-  | 'scheduledToday'
->;
 export interface Quest {
   id: string;
   title: string;
@@ -203,7 +189,7 @@ export interface Dashboard {
     contributions: { key: string; value: number; weight: number; contribution: number }[];
   };
   areas: Area[];
-  habits: HabitSummary[];
+  habits: Habit[];
   habitCount: number;
   completedHabits: number;
   tasks: Task[];
@@ -219,16 +205,11 @@ export interface Dashboard {
 }
 export interface Reward {
   id: string;
-  userId: string | null;
   title: string;
   description: string;
   cost: number;
   icon: string;
   category: string;
-  active: boolean;
-  favorite?: boolean;
-  cooldownDays: number;
-  contexts: string[];
   redemptionLimit: number | null;
 }
 export interface Redemption {
@@ -236,28 +217,7 @@ export interface Redemption {
   costSnapshot: number;
   createdAt: string;
   refundedAt: string | null;
-  rating: number | null;
   reward: { title: string; icon: string };
-}
-export interface RewardSaving {
-  rewardId: string;
-  targetXp: number;
-  currentXp: number;
-  remainingXp: number;
-  progressPercent: number;
-  status: 'SAVING' | 'READY' | 'UNAVAILABLE';
-  reward: Pick<Reward, 'id' | 'title' | 'category' | 'cost' | 'icon' | 'active'>;
-}
-export interface RewardRecommendation {
-  reward: Pick<Reward, 'id' | 'title' | 'category' | 'cost' | 'contexts'>;
-  score: number;
-  reason:
-    | 'favorite'
-    | 'enjoyed_category'
-    | 'time_match'
-    | 'discover'
-    | 'chosen_category'
-    | 'another_option';
 }
 export interface Friend {
   id: string;

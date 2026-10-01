@@ -59,8 +59,8 @@ import { Overview } from '../../models';
             <p class="text-xs text-muted">
               {{
                 i18n.t(
-                  'Events will appear as people use MIRHAL.',
-                  'ستظهر الأحداث مع استخدام مِرحال.'
+                  'Events will appear as people use LifeQuest.',
+                  'ستظهر الأحداث مع استخدام رحلة التوازن.'
                 )
               }}
             </p>

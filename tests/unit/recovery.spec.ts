@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateOnly, needsRecovery, repeatedMisses } from '@lifequest/domain';
+import { dateOnly, needsRecovery } from '@lifequest/domain';
 
 const schedule = {
   frequency: 'DAILY',
@@ -36,28 +36,5 @@ describe('Recovery respects the commitment a person actually made', () => {
     expect(
       needsRecovery(weekly, logs('2026-09-14', '2026-09-14', '2026-09-16'), dateOnly('2026-09-26')),
     ).toBe(true);
-  });
-  it('notices two misses among three previous scheduled days but respects rest days', () => {
-    const today = dateOnly('2026-09-26');
-    expect(repeatedMisses(schedule, logs('2026-09-25'), today)).toBe(true);
-    expect(repeatedMisses(schedule, logs('2026-09-25', '2026-09-24'), today)).toBe(false);
-    expect(repeatedMisses({ ...schedule, startDate: dateOnly('2026-09-25') }, [], today)).toBe(
-      false,
-    );
-    const custom = { ...schedule, frequency: 'CUSTOM', scheduleDays: [1, 5] };
-    expect(repeatedMisses(custom, logs('2026-09-25'), today)).toBe(true);
-  });
-  it('notices repeated missed full weeks and leaves a new weekly habit alone', () => {
-    const weekly = { ...schedule, frequency: 'WEEKLY', weeklyTarget: 3 };
-    expect(
-      repeatedMisses(
-        weekly,
-        logs('2026-09-14', '2026-09-15', '2026-09-16'),
-        dateOnly('2026-09-28'),
-      ),
-    ).toBe(true);
-    expect(
-      repeatedMisses({ ...weekly, startDate: dateOnly('2026-09-15') }, [], dateOnly('2026-09-28')),
-    ).toBe(false);
   });
 });

@@ -34,9 +34,7 @@ beforeAll(async () => {
     env: process.env,
     stdio: 'pipe',
   });
-  app = configureApp(
-    await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
-  );
+  app = configureApp(await NestFactory.create(AppModule, { logger: false, bodyParser: false }));
   await app.init();
   db = app.get(Database);
   const tables = await db.$queryRaw<
@@ -49,7 +47,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
 });
-describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
+describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
   it('exposes health, protects private routes, and rejects cross-origin writes', async () => {
     expect((await http().get('/api/health')).status).toBe(200);
     expect((await http().get('/api/goals')).status).toBe(401);
@@ -162,14 +160,6 @@ describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(results.reduce((sum, r) => sum + r.body.awarded, 0)).toBe(20);
     expect(await db.habitLog.count({ where: { habitId } })).toBe(1);
     expect(await db.xPTransaction.count({ where: { source: habitId } })).toBe(1);
-    await db.habit.update({
-      where: { id: habitId },
-      data: { startDate: new Date(Date.now() - 10 * 86400000) },
-    });
-    const listed = await http().get('/api/habits').set('Cookie', cookie);
-    expect(
-      listed.body.items.find((item: { id: string }) => item.id === habitId)?.recoveryPattern,
-    ).toBe(true);
   });
   it('records learning in Habit Lab and distinct daily check-ins', async () => {
     expect(
@@ -293,107 +283,6 @@ describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
     expect((await http().get('/api/habits').set('Cookie', secondCookie)).body.items).toHaveLength(
       0,
     );
-  });
-  it('keeps reward preferences and feedback owned, and clears feedback on refund', async () => {
-    const created = await http()
-      .post('/api/rewards')
-      .set('Origin', origin)
-      .set('Cookie', cookie)
-      .send({ title: 'Weekend book', cost: 50, category: 'books', cooldownDays: 2 });
-    expect(created.status).toBe(201);
-    const id = created.body.id;
-    expect(
-      (
-        await http()
-          .patch(`/api/rewards/${id}`)
-          .set('Origin', origin)
-          .set('Cookie', secondCookie)
-          .send({ title: 'Stolen reward' })
-      ).status,
-    ).toBe(404);
-    expect(
-      (
-        await http()
-          .put(`/api/rewards/${id}/favorite`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({})
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await http()
-          .put(`/api/rewards/${id}/save`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({ targetXp: 200 })
-      ).status,
-    ).toBe(200);
-    expect(
-      (await http().get('/api/reward-savings').set('Cookie', secondCookie)).body.items,
-    ).toHaveLength(0);
-    const savings = (await http().get('/api/reward-savings').set('Cookie', cookie)).body.items;
-    expect(savings.find((item: { rewardId: string }) => item.rewardId === id)?.targetXp).toBe(200);
-    const recommendations = await http().get('/api/reward-recommendations').set('Cookie', cookie);
-    expect(recommendations.status).toBe(200);
-    expect(
-      recommendations.body.some((item: { reward: { id: string } }) => item.reward.id === id),
-    ).toBe(true);
-    const redeemed = await http()
-      .post(`/api/rewards/${id}/redeem`)
-      .set('Origin', origin)
-      .set('Cookie', cookie)
-      .send({ idempotencyKey: crypto.randomUUID() });
-    expect(redeemed.status).toBe(201);
-    expect(
-      (
-        await http()
-          .post(`/api/rewards/${id}/redeem`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({ idempotencyKey: crypto.randomUUID() })
-      ).status,
-    ).toBe(400);
-    const redemptionId = redeemed.body.redemption.id;
-    expect(
-      (
-        await http()
-          .put(`/api/redemptions/${redemptionId}/feedback`)
-          .set('Origin', origin)
-          .set('Cookie', secondCookie)
-          .send({ rating: 5 })
-      ).status,
-    ).toBe(404);
-    expect(
-      (
-        await http()
-          .put(`/api/redemptions/${redemptionId}/feedback`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({ rating: 5 })
-      ).body.rating,
-    ).toBe(5);
-    expect(
-      (
-        await http()
-          .post(`/api/redemptions/${redemptionId}/refund`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({})
-      ).status,
-    ).toBe(201);
-    expect(
-      (await db.rewardRedemption.findUniqueOrThrow({ where: { id: redemptionId } })).rating,
-    ).toBeNull();
-    expect(
-      (
-        await http()
-          .put(`/api/redemptions/${redemptionId}/feedback`)
-          .set('Origin', origin)
-          .set('Cookie', cookie)
-          .send({ rating: 5 })
-      ).status,
-    ).toBe(400);
   });
   it('accepts private friends and creates a challenge without exposing journals', async () => {
     const friendship = await http()

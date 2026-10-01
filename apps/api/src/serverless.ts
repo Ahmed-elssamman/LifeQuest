@@ -24,7 +24,7 @@ export default async function handler(request: Request, response: Response) {
     console.error(JSON.stringify({ level: 'error', code: 'SERVERLESS_STARTUP_FAILED' }));
     response.status(503).json({
       code: 'SERVICE_UNAVAILABLE',
-      message: 'MIRHAL is temporarily unavailable. Please try again shortly.',
+      message: 'LifeQuest is temporarily unavailable. Please try again shortly.',
       timestamp: new Date().toISOString(),
     });
   }

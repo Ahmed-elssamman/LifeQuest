@@ -17,7 +17,6 @@ import {
   isScheduled,
   localDate,
   needsRecovery,
-  repeatedMisses,
 } from '@lifequest/domain';
 import { Database } from '../common/database';
 import { Identity } from '../common/http';
@@ -74,7 +73,6 @@ export class HabitsService {
           completedToday: habit.logs.some((log) => log.date.getTime() === today.getTime()),
           scheduledToday: isScheduled(habit, today),
           recoverySuggested: habit.status === 'ACTIVE' && needsRecovery(habit, habit.logs, today),
-          recoveryPattern: habit.status === 'ACTIVE' && repeatedMisses(habit, habit.logs, today),
         })),
         count,
         query.page,

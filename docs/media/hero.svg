@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" role="img" aria-labelledby="title desc">
-  <title id="title">MIRHAL — مِرحال. Your Life. Your Journey.</title>
+  <title id="title">LifeQuest — small steps, meaningful change</title>
   <desc id="desc">A lavender journey connects everyday habits to a brighter horizon, on a deep purple background.</desc>
   <defs>
     <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171323"/><stop offset="1" stop-color="#34264e"/></linearGradient>
@@ -15,10 +15,10 @@
   <g transform="translate(64 57)">
     <rect width="46" height="46" rx="14" fill="#a998ed"/>
     <g transform="translate(8 8) scale(.48)" fill="#211932"><path d="M32 0C13 0 0 13 0 32h32V0Zm7 32h25C64 13 56 0 39 0v32ZM32 39H0c0 19 13 25 32 25V39Zm7 0v25c17 0 25-10 25-25H39Z"/></g>
-    <text x="63" y="30" fill="#e3dcf7" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="4">YOUR LIFE. YOUR JOURNEY.</text>
+    <text x="63" y="30" fill="#e3dcf7" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="4">YOUR LIFE. IN BALANCE.</text>
   </g>
-  <text x="59" y="192" fill="#faf7ff" font-family="Arial, sans-serif" font-size="78" font-weight="700" letter-spacing="-4">MIRHAL<tspan fill="#b8e7d1">.</tspan></text>
-  <text x="64" y="238" fill="#d3c6ec" font-family="Arial, sans-serif" font-size="24">مِرحال · Your Life. Your Journey.</text>
+  <text x="59" y="192" fill="#faf7ff" font-family="Arial, sans-serif" font-size="78" font-weight="700" letter-spacing="-4">LifeQuest<tspan fill="#b8e7d1">.</tspan></text>
+  <text x="64" y="238" fill="#d3c6ec" font-family="Arial, sans-serif" font-size="24">Small steps. Meaningful change.</text>
   <g font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="2" fill="#c8bedc">
     <text x="65" y="310">GOALS</text><circle cx="140" cy="306" r="2" fill="#b8e7d1"/>
     <text x="162" y="310">HABITS</text><circle cx="246" cy="306" r="2" fill="#b8e7d1"/>

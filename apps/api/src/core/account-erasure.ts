@@ -65,12 +65,6 @@ export async function erasePersonalContent(tx: Prisma.TransactionClient, userId:
       reflection: '',
     },
   });
-  await tx.rewardFavorite.deleteMany({ where: { userId } });
-  await tx.rewardSavingsTarget.deleteMany({ where: { userId } });
-  await tx.rewardRedemption.updateMany({
-    where: { userId },
-    data: { rating: null, ratedAt: null },
-  });
   await tx.reward.updateMany({
     where: { userId },
     data: {
@@ -78,8 +72,6 @@ export async function erasePersonalContent(tx: Prisma.TransactionClient, userId:
       description: '',
       notes: '',
       category: 'personal',
-      contexts: [],
-      cooldownDays: 0,
       active: false,
     },
   });
@@ -98,7 +90,6 @@ export async function erasePersonalContent(tx: Prisma.TransactionClient, userId:
     where: { feedback: { userId } },
     select: { storageKey: true },
   });
-  await tx.attachmentDeletion.createMany({ data: attachments, skipDuplicates: true });
   await tx.feedbackAttachment.deleteMany({ where: { feedback: { userId } } });
   await tx.feedbackReply.deleteMany({ where: { feedback: { userId } } });
   await tx.feedback.updateMany({

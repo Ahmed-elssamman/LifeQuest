@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { HabitSummary } from '@lifequest/data-access';
+import { Habit } from '@lifequest/data-access';
 import { Preferences } from '@lifequest/utilities';
 import { Icon } from './icon';
 @Component({
@@ -10,7 +10,7 @@ import { Icon } from './icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HabitRow {
-  readonly habit = input.required<HabitSummary>();
+  readonly habit = input.required<Habit>();
   readonly busy = input(false);
   readonly complete = output<boolean>();
   readonly i18n = inject(Preferences);

@@ -86,27 +86,11 @@
             >{{ habit.nextExperiment }}
           </div>
         }
-        @if (habit.recoveryPattern) {
-          <div class="mt-4 rounded-xl bg-mint p-4 text-xs leading-6 text-mint-ink">
-            {{
-              i18n.t(
-                'Several planned days did not happen. Could a smaller step fit better?',
-                'لم تسر عدة أيام كما خططت. هل تناسبك خطوة أصغر؟'
-              )
-            }}
-          </div>
-          <button class="btn btn-secondary mt-3 w-full text-xs" (click)="diagnose(habit, true)">
-            <lq-icon name="flask" [size]="16" />{{
-              i18n.t('Try a smaller experiment', 'جرّب تجربة أصغر')
-            }}
-          </button>
-        } @else {
-          <button class="btn btn-secondary mt-5 w-full text-xs" (click)="diagnose(habit)">
-            <lq-icon name="flask" [size]="16" />{{
-              i18n.t('Explore an adjustment', 'استكشف تعديلاً')
-            }}
-          </button>
-        }
+        <button class="btn btn-secondary mt-5 w-full text-xs" (click)="diagnose(habit)">
+          <lq-icon name="flask" [size]="16" />{{
+            i18n.t('Explore an adjustment', 'استكشف تعديلاً')
+          }}
+        </button>
         @if (habit.experiments.length) {
           <details class="mt-4">
             <summary class="min-h-10 cursor-pointer text-xs text-muted">

@@ -1,19 +1,19 @@
 <div align="center">
 
-<img src="docs/media/hero.svg" alt="MIRHAL — مِرحال. Your Life. Your Journey." width="100%" />
+<img src="docs/media/hero.svg" alt="LifeQuest — small steps, meaningful change" width="100%" />
 
-<h3>مِرحال · Your Life. Your Journey.</h3>
+<h3>رحلة التوازن · Your life. In balance.</h3>
 
 Bring your goals, habits, and everyday wins together.<br />
 Build a life that feels like you, one meaningful step at a time.
 
 <p>
-  <a href="https://lifequest-web-cyan.vercel.app"><img src="https://img.shields.io/badge/Existing_live_release-6B57CD?style=for-the-badge&amp;logo=vercel&amp;logoColor=white" alt="Open the existing live release; the MIRHAL update is not deployed" /></a>
+  <a href="https://lifequest-web-cyan.vercel.app"><img src="https://img.shields.io/badge/Explore_LifeQuest-6B57CD?style=for-the-badge&amp;logo=vercel&amp;logoColor=white" alt="Explore the live LifeQuest app" /></a>
   <a href="https://lifequest-admin.vercel.app"><img src="https://img.shields.io/badge/Admin_Portal-302845?style=for-the-badge&amp;logo=vercel&amp;logoColor=white" alt="Open the admin portal; staff account required" /></a>
   <a href="docs/architecture/overview.md"><img src="https://img.shields.io/badge/Read_the_Docs-B8E7D1?style=for-the-badge&amp;logo=readthedocs&amp;logoColor=243C32" alt="Read the architecture documentation" /></a>
 </p>
 
-[![Validate MIRHAL](https://github.com/Ahmed-elssamman/LifeQuest/actions/workflows/ci.yml/badge.svg)](https://github.com/Ahmed-elssamman/LifeQuest/actions/workflows/ci.yml)
+[![Validate LifeQuest](https://github.com/Ahmed-elssamman/LifeQuest/actions/workflows/ci.yml/badge.svg)](https://github.com/Ahmed-elssamman/LifeQuest/actions/workflows/ci.yml)
 ![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)
 ![NestJS 11](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
@@ -27,25 +27,25 @@ Build a life that feels like you, one meaningful step at a time.
 
 ## Small steps, made visible
 
-MIRHAL — مِرحال is a bilingual personal growth platform that connects long-term goals with the things you do today. Plan meaningful work, build sustainable habits, reflect on your progress, and celebrate the small wins with quests, XP, achievements, and rewards.
+LifeQuest is a bilingual personal growth platform that connects long-term goals with the things you do today. Plan meaningful work, build sustainable habits, reflect on your progress, and celebrate the small wins with quests, XP, achievements, and rewards.
 
 It includes a customer app, a separate administration app, and a shared API. English and Arabic, right-to-left layouts, light and dark themes, and responsive navigation are built into the experience.
 
 <div align="center">
-  <img src="docs/media/product-tour.gif" alt="Archived tour of the customer app before the MIRHAL rebrand: English desktop, Arabic dark mode, and mobile" width="100%" />
-  <p><sub>Archived captures from before the MIRHAL rebrand. <a href="docs/media/landing.png">Static English preview</a> · <a href="docs/media/arabic-dark.png">Arabic / dark preview</a> · <a href="docs/media/mobile.png">Mobile preview</a></sub></p>
+  <img src="docs/media/product-tour.gif" alt="Animated tour of the public LifeQuest homepage: English desktop, Arabic dark mode with right-to-left layout, and mobile" width="100%" />
+  <p><sub>Captured from the live public app. <a href="docs/media/landing.png">Static English preview</a> · <a href="docs/media/arabic-dark.png">Arabic / dark preview</a> · <a href="docs/media/mobile.png">Mobile preview</a></sub></p>
 </div>
 
 ## The experience
 
-|                                   | Make space for what matters                                                                                                  |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 🎯 **A direction for your day**   | Link goals, milestones, projects, tasks, and subtasks. Set priorities and dates, then choose your next step in Today.        |
-| 🌱 **Habits that fit real life**  | Daily, weekly, and custom schedules; minimum actions; streaks; and Habit Lab experiments for getting back on track.          |
-| ✨ **Progress worth celebrating** | Weekly quests, server-calculated XP, levels, achievements, personal rewards, savings goals and gentle level-up celebrations. |
-| 📖 **Room to reflect**            | Daily check-ins, a monthly journey, and analytics help you see the story behind your progress.                               |
-| 🤝 **A little shared momentum**   | Friendships and private challenges with deterministic scoring and explicit sharing controls.                                 |
-| 🛡️ **Care behind the scenes**     | A role-protected admin portal for support, moderation, catalogs, quest templates, insights, and audit logs.                  |
+|                                   | Make space for what matters                                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 🎯 **A direction for your day**   | Link goals, milestones, projects, tasks, and subtasks. Set priorities and dates, then choose your next step in Today. |
+| 🌱 **Habits that fit real life**  | Daily, weekly, and custom schedules; minimum actions; streaks; and Habit Lab experiments for getting back on track.   |
+| ✨ **Progress worth celebrating** | Weekly quests, server-calculated XP, levels, achievements, personal rewards, and gentle level-up celebrations.        |
+| 📖 **Room to reflect**            | Daily check-ins, a monthly journey, and analytics help you see the story behind your progress.                        |
+| 🤝 **A little shared momentum**   | Friendships and private challenges with deterministic scoring and explicit sharing controls.                          |
+| 🛡️ **Care behind the scenes**     | A role-protected admin portal for support, moderation, catalogs, quest templates, insights, and audit logs.           |
 
 ### Thoughtful by design
 
@@ -55,9 +55,7 @@ It includes a customer app, a separate administration app, and a shared API. Eng
 - **Accessible interactions** — keyboard navigation, associated form errors, reduced motion, and unsaved-edit protection.
 - **Private progress** — HttpOnly session cookies, private feedback attachments, and server-authoritative rewards. Offline caching covers static assets; private API data stays off the cache.
 
-> **Release status:** the MIRHAL phases are verified locally and have not been deployed. The query-index, attachment-cleanup and reward-preference migrations must accompany the next reviewed release. The linked live sites still run the previous release. See the [migration plan](docs/implementation/mirhal-migration-plan.md).
-
-> **Existing live deployment:** registration and sign-in are available. Email delivery is currently disabled, so verification and password recovery emails are unavailable. The admin portal requires an authorized staff account.
+> **Live deployment:** registration and sign-in are available. Email delivery is currently disabled, so verification and password recovery emails are unavailable. The admin portal requires an authorized staff account.
 
 ## Quick start
 
@@ -70,7 +68,7 @@ npm ci
 cp -n .env.example .env
 ```
 
-Set `DATABASE_URL` and `DIRECT_URL` in `.env` to your intended PostgreSQL runtime and migration connections. Verify the migration target before running the following commands:
+Set `DATABASE_URL` and `DIRECT_URL` in `.env` to your PostgreSQL runtime and migration connections, then run:
 
 ```bash
 npm run db:generate
@@ -126,7 +124,7 @@ flowchart LR
 
 | Layer        | Technology                                                                                      |
 | ------------ | ----------------------------------------------------------------------------------------------- |
-| Frontend     | Angular 21, signals, lazy routes, public prerendering, Tailwind CSS 4, PrimeNG 21, Lucide icons |
+| Frontend     | Angular 21, signals, lazy routes, public prerendering, Tailwind CSS 4, PrimeNG 19, Lucide icons |
 | Backend      | NestJS 11, Express 5, Zod validation, Argon2id, opaque cookie sessions                          |
 | Data         | Prisma 6, PostgreSQL, versioned SQL migrations, deterministic reference seeds                   |
 | Workspace    | Nx 22, strict TypeScript 5.9, shared domain and UI libraries                                    |
@@ -146,15 +144,13 @@ LifeQuest/
 └── docs/              Architecture, product decisions & visual previews
 ```
 
-Angular 21 and PrimeNG 21 use supported peer ranges without Angular peer overrides. The compatibility decision is documented in [ADR 001](docs/decisions/001-stack-compatibility.md).
+The Angular 21 / PrimeNG 19 pairing uses narrow peer overrides. The compatibility decision and tested usage are documented in [ADR 001](docs/decisions/001-stack-compatibility.md).
 
 ## Quality checks
 
 The [GitHub Actions workflow](.github/workflows/ci.yml) runs formatting, source-safety checks, linting, type checks, unit and integration tests, production builds, SSR checks, and browser tests.
 
 ```bash
-npm ls --all
-npm audit --audit-level=high
 npm run format:check
 npm run security:check
 npm run lint
@@ -168,10 +164,9 @@ npm run build
 npm run test:ssr
 npx playwright install chromium
 npm run test:e2e
-npm run test:performance
 ```
 
-Integration and E2E checks require the isolated local test database described above. E2E serves production builds on ports 4300/4301 with its test API on 3433. Domain and API coverage thresholds are 80% statements/functions/lines and 70% branches. See the [28 September audit](docs/audit/final-audit.md) for current measured coverage, tested workflows, and limitations. The performance command uses disposable fixtures in the local test database and must run after a build, separately from integration tests.
+Integration and E2E checks require the isolated local test database described above. E2E serves production builds on ports 4300/4301 with its test API on 3433. Domain and API coverage thresholds are 80% statements/functions/lines and 70% branches. See the [verification record](docs/architecture/verification.md) for measured coverage, tested workflows, and limitations.
 
 ## Deployment
 
@@ -213,16 +208,14 @@ Development proxies and the E2E server are not production servers. Configure per
 
 ## Documentation
 
-| Explore                      | Guide                                                                                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| How the system fits together | [Architecture overview](docs/architecture/overview.md) · [Frontend](docs/architecture/frontend.md) · [Backend](docs/architecture/backend.md)                                                |
-| How progress works           | [Domain model](docs/product/domain-model.md) · [Gamification](docs/product/gamification.md) · [Challenges](docs/product/challenges.md) · [Personalization](docs/product/personalization.md) |
-| Data and privacy             | [Database](docs/architecture/database.md) · [Privacy](docs/product/privacy.md) · [API](docs/api/README.md)                                                                                  |
-| Verification and operations  | [Testing](docs/architecture/testing.md) · [Latest audit](docs/audit/final-audit.md) · [Historical verification](docs/architecture/verification.md) · [Vercel](docs/architecture/vercel.md)  |
-| Decisions and current scope  | [Compatibility ADR](docs/decisions/001-stack-compatibility.md) · [Implementation record](docs/IMPLEMENTATION.md)                                                                            |
-| MIRHAL migration             | [Baseline](docs/audit/baseline.md) · [Incremental plan](docs/implementation/mirhal-migration-plan.md)                                                                                       |
-| Future health boundary       | [Health integration architecture](docs/architecture/health-integrations.md)                                                                                                                 |
-| Refresh the README visuals   | [Media sources and generation](docs/media/README.md)                                                                                                                                        |
+| Explore                      | Guide                                                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| How the system fits together | [Architecture overview](docs/architecture/overview.md) · [Frontend](docs/architecture/frontend.md) · [Backend](docs/architecture/backend.md) |
+| How progress works           | [Domain model](docs/product/domain-model.md) · [Gamification](docs/product/gamification.md) · [Challenges](docs/product/challenges.md)       |
+| Data and privacy             | [Database](docs/architecture/database.md) · [Privacy](docs/product/privacy.md) · [API](docs/api/README.md)                                   |
+| Verification and operations  | [Testing](docs/architecture/testing.md) · [Verification record](docs/architecture/verification.md) · [Vercel](docs/architecture/vercel.md)   |
+| Decisions and current scope  | [Compatibility ADR](docs/decisions/001-stack-compatibility.md) · [Implementation record](docs/IMPLEMENTATION.md)                             |
+| Refresh the README visuals   | [Media sources and generation](docs/media/README.md)                                                                                         |
 
 ---
 

@@ -108,7 +108,6 @@ export class ChallengesService {
           endDate: end,
           visibility: input.visibility,
           status: 'INVITED',
-          algorithmVersion: 2,
           rules: {
             create: {
               target: input.target,
@@ -116,7 +115,7 @@ export class ChallengesService {
               dailyCap: input.dailyCap,
             },
           },
-          metric: { create: { name: input.mode === 'SCORE' ? 'Habit points' : 'Habit progress' } },
+          metric: { create: { name: input.mode === 'SCORE' ? 'Habit XP' : 'Habit progress' } },
           participants: {
             create: [
               {

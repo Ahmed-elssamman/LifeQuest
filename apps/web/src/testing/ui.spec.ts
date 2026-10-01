@@ -61,11 +61,7 @@ describe('Accessible shared components', () => {
     expect(fixture.nativeElement.querySelector('button')).toBeNull();
   });
   it('applies Arabic direction, theme and reduced motion', () => {
-    vi.stubGlobal('matchMedia', () => ({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    }));
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn() }));
     const preferences = TestBed.inject(Preferences);
     preferences.setLanguage('ar');
     preferences.setTheme('dark');

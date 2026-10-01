@@ -16,27 +16,6 @@ import { pageArgs, pageResult } from '../core/ownership';
 @Injectable()
 export class AdminService {
   constructor(@Inject(Database) private readonly db: Database) {}
-  async moderateChallenge(actor: Identity, id: string, reason: string) {
-    return this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Challenge" WHERE id = ${id} FOR UPDATE`;
-      await this.db.lockActive(tx, actor.id, ['SUPER_ADMIN', 'ADMIN', 'MODERATOR']);
-      const challenge = await tx.challenge.findUnique({ where: { id } });
-      if (!challenge) throw new NotFoundException('Challenge not found.');
-      if (['COMPLETED', 'CANCELLED'].includes(challenge.status))
-        throw new BadRequestException('This challenge has already ended.');
-      await tx.challenge.update({ where: { id }, data: { status: 'CANCELLED' } });
-      await tx.auditLog.create({
-        data: {
-          actorId: actor.id,
-          action: 'CHALLENGE_MODERATED',
-          entity: 'Challenge',
-          entityId: id,
-          metadata: { reason },
-        },
-      });
-      return { success: true };
-    });
-  }
   async overview() {
     const since = new Date(Date.now() - 30 * 86_400_000);
     const [

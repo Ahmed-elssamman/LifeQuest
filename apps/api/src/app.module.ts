@@ -1,7 +1,6 @@
 import { InsightsController } from './admin/insights.controller';
 import { AttachmentsController } from './core/attachments.controller';
 import { AttachmentStorage } from './core/attachment-storage';
-import { AttachmentCleanup } from './core/attachment-cleanup';
 import { QuestTemplatesController } from './admin/quest-templates.controller';
 import { Controller, Get, Inject, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
@@ -24,8 +23,6 @@ import { QuestsService } from './core/quests.service';
 import { GamificationController } from './gamification/gamification.controller';
 import { XpService } from './gamification/xp.service';
 import { RewardsService } from './gamification/rewards.service';
-import { RewardPreferencesService } from './gamification/reward-preferences.service';
-import { RewardRecommendationsService } from './gamification/reward-recommendations.service';
 import { SocialController } from './social/social.controller';
 import { FriendsService } from './social/friends.service';
 import { ChallengeLifecycleService } from './social/challenge-lifecycle.service';
@@ -77,7 +74,6 @@ class HealthController {
   ],
   providers: [
     AttachmentStorage,
-    AttachmentCleanup,
     AuthService,
     MailAdapter,
     PlanningService,
@@ -85,8 +81,6 @@ class HealthController {
     QuestsService,
     XpService,
     RewardsService,
-    RewardPreferencesService,
-    RewardRecommendationsService,
     FriendsService,
     ChallengesService,
     ChallengeLifecycleService,

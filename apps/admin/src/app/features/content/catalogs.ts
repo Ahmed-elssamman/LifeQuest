@@ -178,8 +178,8 @@ export const catalogs: Record<string, CatalogDefinition> = {
     ],
   },
   announcements: {
-    title: 'A little news from MIRHAL.',
-    ar: 'قليل من أخبار مِرحال.',
+    title: 'A little news from LifeQuest.',
+    ar: 'قليل من أخبار رحلة التوازن.',
     description: 'Share product updates and thoughtful announcements.',
     arDescription: 'شارك تحديثات المنتج والإعلانات المدروسة.',
     icon: 'bell',
