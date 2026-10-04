@@ -37,6 +37,21 @@ export class Preferences {
   t(en: string, ar: string) {
     return this.rtl() ? ar : en;
   }
+  habitUnit(value: string) {
+    switch (value.trim().toLowerCase()) {
+      case 'times':
+      case 'مرات':
+        return this.t('times', 'مرات');
+      case 'minutes':
+      case 'دقائق':
+        return this.t('minutes', 'دقائق');
+      case 'pages':
+      case 'صفحات':
+        return this.t('pages', 'صفحات');
+      default:
+        return value;
+    }
+  }
   label(value: string) {
     const labels: Record<string, string> = {
       ACTIVE: 'نشط',

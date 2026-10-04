@@ -56,7 +56,7 @@
         </div>
         <h2 class="text-lg font-semibold tracking-tight">{{ habit.name }}</h2>
         <p class="mt-2 text-xs text-muted">
-          {{ habit.target }} {{ habit.unit }} <span class="mx-1">·</span
+          {{ habit.target }} {{ i18n.habitUnit(habit.unit) }} <span class="mx-1">·</span
           >{{
             habit.preferredTime === 'morning'
               ? i18n.t('Morning', 'صباحاً')

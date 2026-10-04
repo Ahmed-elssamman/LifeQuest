@@ -9,6 +9,18 @@ import { ActivityChart } from '../app/features/analytics/activity-chart';
 import { provideRouter } from '@angular/router';
 
 describe('Accessible shared components', () => {
+  it('localizes standard habit units while preserving custom units', () => {
+    const preferences = TestBed.inject(Preferences);
+    preferences.language.set('ar');
+    expect(preferences.habitUnit('times')).toBe('مرات');
+    expect(preferences.habitUnit('minutes')).toBe('دقائق');
+    expect(preferences.habitUnit('pages')).toBe('صفحات');
+    expect(preferences.habitUnit('steps')).toBe('steps');
+    preferences.language.set('en');
+    expect(preferences.habitUnit('مرات')).toBe('times');
+    expect(preferences.habitUnit('دقائق')).toBe('minutes');
+    expect(preferences.habitUnit('صفحات')).toBe('pages');
+  });
   it('formats dates in the selected language without shifting date-only values', () => {
     TestBed.configureTestingModule({ providers: [LocalizedDatePipe] });
     const pipe = TestBed.inject(LocalizedDatePipe);

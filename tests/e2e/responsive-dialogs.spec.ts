@@ -32,6 +32,10 @@ test('customer creation dialogs remain usable on narrow screens in Arabic and En
           .click();
         const dialog = page.getByRole('dialog').first();
         await expect(dialog).toBeVisible();
+        if (feature.route === 'habits')
+          await expect(page.locator('#habit-unit')).toHaveValue(
+            language === 'ar' ? 'مرات' : 'times',
+          );
         const layout = await dialog.evaluate((element) => {
           const bounds = element.getBoundingClientRect();
           return {
