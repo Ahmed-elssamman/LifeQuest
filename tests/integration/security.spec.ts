@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NestFactory } from '@nestjs/core';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -301,7 +301,9 @@ describe('Authentication recovery, privacy and operational control', () => {
         .set('Origin', origin)
         .set('Cookie', cookie)
         .attach('file', buffer, { filename: 'screenshot.png', contentType: type });
+    const storageWrite = vi.spyOn(app.get(AttachmentStorage), 'put');
     expect((await upload(member.cookie)).status).toBe(404);
+    expect(storageWrite).not.toHaveBeenCalled();
     expect(
       (await upload(owner.cookie, Buffer.from('<svg>unsafe</svg>'), 'image/svg+xml')).status,
     ).toBe(400);
@@ -315,7 +317,10 @@ describe('Authentication recovery, privacy and operational control', () => {
     expect((await get(path, support.cookie)).status).toBe(200);
     await upload(owner.cookie);
     await upload(owner.cookie);
+    const storedCount = storageWrite.mock.calls.length;
     expect((await upload(owner.cookie)).status).toBe(400);
+    expect(storageWrite).toHaveBeenCalledTimes(storedCount);
+    storageWrite.mockRestore();
     const stored = await db.feedbackAttachment.findUniqueOrThrow({
       where: { id: attached.body.id },
     });
@@ -411,13 +416,22 @@ describe('Authentication recovery, privacy and operational control', () => {
     ).toBe(false);
     const updated = await patch(
       'admin/quest-templates/' + created.body.id,
-      { ...input, active: true, items: ['Take one tiny action'] },
+      {
+        ...input,
+        active: true,
+        description: 'Begin with one small action.',
+        descriptionAr: 'ابدأ بخطوة صغيرة واحدة.',
+        items: ['Take one tiny action'],
+        itemsAr: ['اتخذ خطوة صغيرة'],
+      },
       admin.cookie,
     );
     expect(updated.status).toBe(200);
     expect(updated.body.items.map((item: { title: string }) => item.title)).toEqual([
       'Take one tiny action',
     ]);
+    expect(updated.body.descriptionAr).toBe('ابدأ بخطوة صغيرة واحدة.');
+    expect(updated.body.items[0].titleAr).toBe('اتخذ خطوة صغيرة');
     expect(
       (await get('quest-templates')).body.some(
         (item: { id: string }) => item.id === created.body.id,
@@ -428,6 +442,14 @@ describe('Authentication recovery, privacy and operational control', () => {
     expect(await db.auditLog.count({ where: { entityId: created.body.id } })).toBe(2);
     expect(
       (await post('admin/quest-templates', admin.cookie, { ...input, items: [] })).status,
+    ).toBe(400);
+    expect(
+      (
+        await post('admin/quest-templates', admin.cookie, {
+          ...input,
+          itemsAr: ['خطوة واحدة'],
+        })
+      ).status,
     ).toBe(400);
     expect(
       (await post('admin/quest-templates', admin.cookie, { ...input, areaId: 'missing' })).status,
@@ -445,6 +467,17 @@ describe('Authentication recovery, privacy and operational control', () => {
       (await patch('admin/rewards/' + reward.body.id, { cost: 400 }, admin.cookie)).body
         .description,
     ).toBe('Keep this description');
+    const translatedReward = await patch(
+      'admin/rewards/' + reward.body.id,
+      {
+        titleAr: 'مكافأة التشغيل',
+        descriptionAr: 'احتفظ بهذا الوصف.',
+        categoryAr: 'العمل',
+      },
+      admin.cookie,
+    );
+    expect(translatedReward.body.titleAr).toBe('مكافأة التشغيل');
+    expect(translatedReward.body.categoryAr).toBe('العمل');
     const achievement = await post('admin/achievements', admin.cookie, {
       slug: 'staff-' + randomUUID(),
       title: 'Steady effort',
@@ -458,9 +491,18 @@ describe('Authentication recovery, privacy and operational control', () => {
     });
     expect(achievement.status).toBe(201);
     expect(
-      (await patch('admin/achievements/' + achievement.body.id, { threshold: 8 }, admin.cookie))
-        .body.hidden,
+      (
+        await patch(
+          'admin/achievements/' + achievement.body.id,
+          { threshold: 8, descriptionAr: 'واظب على عاداتك.' },
+          admin.cookie,
+        )
+      ).body.hidden,
     ).toBe(true);
+    expect(
+      (await db.achievement.findUniqueOrThrow({ where: { id: achievement.body.id } }))
+        .descriptionAr,
+    ).toBe('واظب على عاداتك.');
     const help = await post('admin/help', admin.cookie, {
       slug: 'article-' + randomUUID(),
       title: 'A thoughtful answer',
@@ -484,11 +526,18 @@ describe('Authentication recovery, privacy and operational control', () => {
       (
         await patch(
           'admin/announcements/' + announcement.body.id,
-          { body: 'A new reflection prompt' },
+          {
+            body: 'A new reflection prompt',
+            titleAr: 'فصل جديد',
+            bodyAr: 'وقت التأمل معاً',
+          },
           admin.cookie,
         )
       ).body.active,
     ).toBe(false);
+    expect(
+      (await db.announcement.findUniqueOrThrow({ where: { id: announcement.body.id } })).bodyAr,
+    ).toBe('وقت التأمل معاً');
     expect(
       (
         await patch(
@@ -516,6 +565,9 @@ describe('Authentication recovery, privacy and operational control', () => {
       'audit-logs',
     ])
       expect((await get('admin/' + route, admin.cookie)).status, route).toBe(200);
+    const health = await get('admin/health', admin.cookie);
+    expect(health.body.email).toEqual({ provider: 'file', status: 'configured' });
+    expect(JSON.stringify(health.body)).not.toContain('RESEND_API_KEY');
   });
   it('reports a level transition only once from committed ledger evidence', async () => {
     const owner = await fixture();
@@ -542,6 +594,38 @@ describe('Authentication recovery, privacy and operational control', () => {
       (await db.notification.findFirstOrThrow({ where: { userId: owner.id, type: 'LEVEL_UP' } }))
         .title,
     ).toBe('فصل جديد في رحلتك');
+  });
+  it('stores the Arabic shared reward name in an Arabic redemption notification', async () => {
+    const explorer = await fixture();
+    await db.profile.update({ where: { userId: explorer.id }, data: { language: 'ar' } });
+    await db.xPTransaction.create({
+      data: {
+        userId: explorer.id,
+        type: 'BONUS',
+        source: 'reward-language-fixture',
+        amount: 50,
+        idempotencyKey: 'reward-language:' + explorer.id,
+      },
+    });
+    const reward = await db.reward.create({
+      data: {
+        title: 'A shared quiet moment',
+        titleAr: 'لحظة هادئة مشتركة',
+        descriptionAr: 'استمتع بلحظة هادئة.',
+        categoryAr: 'راحة',
+        cost: 50,
+      },
+    });
+    const response = await post(`rewards/${reward.id}/redeem`, explorer.cookie, {
+      idempotencyKey: randomUUID(),
+    });
+    expect(response.status).toBe(201);
+    const notification = await db.notification.findFirstOrThrow({
+      where: { userId: explorer.id, type: 'REWARD' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(notification.body).toContain('لحظة هادئة مشتركة');
+    expect(notification.body).not.toContain('A shared quiet moment');
   });
   it('paginates operational challenges with validated lifecycle filters', async () => {
     const title = 'Paged moderation ' + randomUUID();

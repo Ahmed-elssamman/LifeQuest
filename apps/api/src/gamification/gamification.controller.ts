@@ -123,7 +123,7 @@ export class GamificationController {
     const [items, total] = await Promise.all([
       this.db.rewardRedemption.findMany({
         where: { userId: user.id },
-        include: { reward: { select: { title: true, icon: true } } },
+        include: { reward: { select: { title: true, titleAr: true, userId: true, icon: true } } },
         orderBy: { createdAt: 'desc' },
         ...pageArgs(query.page, query.limit),
       }),

@@ -32,6 +32,7 @@ const env = {
   DIRECT_URL: url.href,
   NODE_ENV: 'test',
   MAIL_MODE: 'development',
+  EMAIL_PROVIDER: 'file',
   UPLOAD_DIR: '.local/e2e-uploads',
   PORT: '3433',
   WEB_ORIGIN: 'http://localhost:4300',
@@ -42,7 +43,14 @@ const env = {
   DEMO_ADMIN_EMAIL: credentials.adminEmail,
   DEMO_ADMIN_PASSWORD: credentials.adminPassword,
 };
-for (const key of ['VERCEL', 'BLOB_READ_WRITE_TOKEN', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'])
+for (const key of [
+  'VERCEL',
+  'BLOB_READ_WRITE_TOKEN',
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASSWORD',
+  'RESEND_API_KEY',
+])
   delete env[key];
 try {
   execFileSync('node_modules/.bin/prisma', ['migrate', 'deploy'], { env, stdio: 'pipe' });
@@ -62,6 +70,12 @@ try {
 } catch {
   throw new Error('Isolated E2E seed failed.');
 }
+const seeded = new PrismaClient({ datasources: { db: { url: url.href } } });
+await seeded.profile.updateMany({
+  where: { user: { email: { in: [credentials.email, credentials.adminEmail] } } },
+  data: { language: 'en' },
+});
+await seeded.$disconnect();
 const api = spawn('node', ['dist/api/apps/api/src/main.js'], {
   env,
   stdio: ['ignore', 'pipe', 'pipe'],

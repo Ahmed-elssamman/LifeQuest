@@ -1,12 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NestFactory } from '@nestjs/core';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ServiceUnavailableException } from '@nestjs/common';
 import request from 'supertest';
 import { execFileSync } from 'node:child_process';
 import { AppModule } from '../../apps/api/src/app.module';
 import { configureApp } from '../../apps/api/src/bootstrap';
 import { Database } from '../../apps/api/src/common/database';
 import { MailAdapter } from '../../apps/api/src/auth/mail.adapter';
+import { AuthService } from '../../apps/api/src/auth/auth.service';
+import { cleanupExpiredRecords } from '../../apps/api/src/common/maintenance.controller';
 import { ChallengeLifecycleService } from '../../apps/api/src/social/challenge-lifecycle.service';
 import { seed } from '../../prisma/seed';
 let app: INestApplication;
@@ -63,6 +65,7 @@ describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
     userId = response.body.user.id;
     const mail = app.get(MailAdapter).outbox.find((item) => item.to === body.email)!;
+    expect(mail.language).toBe('ar');
     const token = new URL(mail.url).searchParams.get('token');
     expect(
       (await http().post('/api/auth/verify-email').set('Origin', origin).send({ token })).status,
@@ -70,6 +73,56 @@ describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(
       (await http().post('/api/auth/verify-email').set('Origin', origin).send({ token })).status,
     ).toBe(400);
+  });
+  it('uses persisted English for recovery mail without exposing account existence on delivery failure', async () => {
+    await db.profile.update({ where: { userId }, data: { language: 'en' } });
+    const delivered = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: body.email });
+    expect(delivered.status).toBe(201);
+    expect(app.get(MailAdapter).outbox.at(-1)?.language).toBe('en');
+    const adapter = app.get(MailAdapter);
+    const failing = vi.spyOn(adapter, 'send').mockRejectedValue(new ServiceUnavailableException());
+    const known = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: body.email });
+    const unknown = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: 'missing@example.test' });
+    expect(known.status).toBe(unknown.status);
+    expect(known.body).toEqual(unknown.body);
+    failing.mockRestore();
+  });
+  it('limits recovery email sends per account across concurrent callers', async () => {
+    const recent = await db.authToken.count({
+      where: {
+        userId,
+        purpose: 'RESET_PASSWORD',
+        createdAt: { gte: new Date(Date.now() - 60 * 60_000) },
+      },
+    });
+    const remaining = Math.max(0, 5 - recent);
+    const adapter = app.get(MailAdapter);
+    const before = adapter.outbox.length;
+    const results = await Promise.all(
+      Array.from({ length: remaining + 3 }, () =>
+        app.get(AuthService).issueEmailToken(userId, body.email, 'RESET_PASSWORD'),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(remaining);
+    expect(adapter.outbox.length - before).toBe(remaining);
+    expect(
+      await db.authToken.count({
+        where: {
+          userId,
+          purpose: 'RESET_PASSWORD',
+          createdAt: { gte: new Date(Date.now() - 60 * 60_000) },
+        },
+      }),
+    ).toBe(5);
   });
   it('rejects invalid credentials and privilege escalation', async () => {
     expect(
@@ -654,6 +707,34 @@ describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
     );
     expect(results.map((result) => result.status).sort()).toEqual([201, 400]);
     expect((await http().get('/api/xp').set('Cookie', cookie)).body.balance).toBe(0);
+  });
+  it('prunes expired maintenance records while preserving live rate limits', async () => {
+    const expired = new Date(Date.now() - 60_000);
+    const future = new Date(Date.now() + 60_000);
+    const expiredKey = crypto.randomUUID();
+    const liveKey = crypto.randomUUID();
+    await db.rateLimitBucket.createMany({
+      data: [
+        { key: expiredKey, hits: 1, expiresAt: expired },
+        { key: liveKey, hits: 1, expiresAt: future },
+      ],
+    });
+    const token = await db.authToken.create({
+      data: {
+        userId,
+        purpose: 'VERIFY_EMAIL',
+        tokenHash: crypto.randomUUID(),
+        expiresAt: expired,
+      },
+    });
+    const session = await db.session.create({
+      data: { userId, tokenHash: crypto.randomUUID(), expiresAt: expired },
+    });
+    await cleanupExpiredRecords(db);
+    expect(await db.rateLimitBucket.findUnique({ where: { key: expiredKey } })).toBeNull();
+    expect(await db.rateLimitBucket.findUnique({ where: { key: liveKey } })).not.toBeNull();
+    expect(await db.authToken.findUnique({ where: { id: token.id } })).toBeNull();
+    expect(await db.session.findUnique({ where: { id: session.id } })).toBeNull();
   });
   it('logs out and invalidates the session', async () => {
     expect(

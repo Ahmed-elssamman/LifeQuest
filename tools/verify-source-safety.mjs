@@ -6,6 +6,7 @@ const secrets = [
   'DATABASE_URL',
   'DIRECT_URL',
   'SMTP_PASSWORD',
+  'RESEND_API_KEY',
   'DEMO_PASSWORD',
   'DEMO_ADMIN_PASSWORD',
   'BLOB_READ_WRITE_TOKEN',
@@ -26,6 +27,7 @@ function visit(path) {
 }
 for (const root of roots) visit(root);
 visit('README.md');
+for (const file of ['.env.example', 'package.json', 'render.yaml']) visit(file);
 if (matches.length) {
   console.error('Secret values detected in source files:', matches.join(', '));
   process.exitCode = 1;

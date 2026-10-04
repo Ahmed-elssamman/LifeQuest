@@ -54,7 +54,9 @@ class HealthController {
         throttlers: [{ ttl: 60000, limit: 180 }],
         getTracker: (_request, context) =>
           clientTracker(context.switchToHttp().getRequest<Request>()),
-        ...(process.env['VERCEL'] === '1' ? { storage: new DatabaseRateLimit(db) } : {}),
+        ...(process.env['NODE_ENV'] === 'production' || process.env['VERCEL'] === '1'
+          ? { storage: new DatabaseRateLimit(db) }
+          : {}),
       }),
     }),
   ],

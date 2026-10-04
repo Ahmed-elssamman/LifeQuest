@@ -1,7 +1,11 @@
-@for (announcement of announcements.data()?.slice(0, 1); track announcement.id) {
+@for (announcement of visibleAnnouncements(); track announcement.id) {
   <aside class="mb-5 rounded-xl border border-brand/20 bg-brand-soft p-4">
-    <h2 class="text-sm font-semibold text-brand">{{ announcement.title }}</h2>
-    <p class="mt-1 text-xs leading-6 text-muted">{{ announcement.body }}</p>
+    <h2 class="text-sm font-semibold text-brand">
+      {{ i18n.t(announcement.title, announcement.titleAr) }}
+    </h2>
+    <p class="mt-1 text-xs leading-6 text-muted">
+      {{ i18n.t(announcement.body, announcement.bodyAr) }}
+    </p>
   </aside>
 }
 @if (resource.loading() && !resource.data()) {

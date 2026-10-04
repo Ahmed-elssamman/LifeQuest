@@ -5,9 +5,22 @@ import { config } from 'dotenv';
 config({ quiet: true });
 
 const root = process.cwd();
-const origin = process.env['VERCEL_WEB_ORIGIN'];
-if (!origin || new URL(origin).protocol !== 'https:')
-  throw new Error('VERCEL_WEB_ORIGIN must be the HTTPS production web origin.');
+const renderDeployment = process.argv.includes('--render');
+function httpsOrigin(name, required = true) {
+  const value = process.env[name];
+  if (!value && !required) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:' && url.origin === value && !url.username && !url.password)
+      return value;
+  } catch {
+    // Report only the variable name; a URL may contain credentials.
+  }
+  throw new Error(`${name} must be an HTTPS origin without a path, query, or credentials.`);
+}
+const origin = httpsOrigin('VERCEL_WEB_ORIGIN');
+const apiOrigin = httpsOrigin('VERCEL_API_ORIGIN', renderDeployment);
+if (renderDeployment) httpsOrigin('VERCEL_ADMIN_ORIGIN');
 const writeJson = (path, value) => writeFile(path, JSON.stringify(value, null, 2));
 const headerRoutes = [
   {
@@ -38,7 +51,9 @@ for (const name of ['web', 'admin']) {
   await cp(resolve(root, `dist/${name}/browser`), `${out}/static`, { recursive: true });
   const api =
     name === 'web'
-      ? { src: '/api(?:/.*)?', dest: '/api' }
+      ? apiOrigin
+        ? { src: '/api(/.*)?', dest: `${apiOrigin}/api$1` }
+        : { src: '/api(?:/.*)?', dest: '/api' }
       : { src: '/api(/.*)?', dest: `${origin}/api$1` };
   const routes = [...headerRoutes, api];
   if (name === 'web')
@@ -51,11 +66,11 @@ for (const name of ['web', 'admin']) {
   await writeJson(`${out}/config.json`, {
     version: 3,
     routes,
-    ...(name === 'web'
+    ...(name === 'web' && !apiOrigin
       ? { crons: [{ path: '/api/internal/maintenance', schedule: '0 3 * * *' }] }
       : {}),
   });
-  if (name !== 'web') continue;
+  if (name !== 'web' || apiOrigin) continue;
   const func = `${out}/functions/api.func`;
   await mkdir(func, { recursive: true });
   const entry = 'dist/api/apps/api/src/serverless.js';

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -15,7 +14,7 @@ import {
   Toasts,
 } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import {
   Pagination,
   EmptyState,
@@ -30,7 +29,7 @@ import { applyServerValidation, FormField } from '@lifequest/forms';
   selector: 'lq-challenges',
   imports: [
     Pagination,
-    DatePipe,
+    LocalizedDatePipe,
     RouterLink,
     FormsModule,
     ReactiveFormsModule,

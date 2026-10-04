@@ -47,7 +47,23 @@ export const catalogs: Record<string, CatalogDefinition> = {
     icon: 'gift',
     fields: [
       title,
+      {
+        key: 'titleAr',
+        label: 'Arabic title',
+        ar: 'العنوان بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
       description,
+      {
+        key: 'descriptionAr',
+        label: 'Arabic description',
+        ar: 'الوصف بالعربية',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
       {
         key: 'cost',
         label: 'XP cost',
@@ -65,6 +81,14 @@ export const catalogs: Record<string, CatalogDefinition> = {
         options: ['gift', 'coffee', 'book-open', 'clapperboard', 'sun', 'heart'],
       },
       { key: 'category', label: 'Category', ar: 'الفئة', kind: 'text', value: 'personal' },
+      {
+        key: 'categoryAr',
+        label: 'Arabic category',
+        ar: 'الفئة بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
     ],
   },
   achievements: {
@@ -92,6 +116,14 @@ export const catalogs: Record<string, CatalogDefinition> = {
         required: true,
       },
       description,
+      {
+        key: 'descriptionAr',
+        label: 'Arabic description',
+        ar: 'الوصف بالعربية',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
       {
         key: 'icon',
         label: 'Icon',
@@ -186,9 +218,25 @@ export const catalogs: Record<string, CatalogDefinition> = {
     fields: [
       title,
       {
+        key: 'titleAr',
+        label: 'Arabic title',
+        ar: 'العنوان بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
+      {
         key: 'body',
         label: 'Announcement',
         ar: 'الإعلان',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
+      {
+        key: 'bodyAr',
+        label: 'Arabic announcement',
+        ar: 'الإعلان بالعربية',
         kind: 'textarea',
         value: '',
         required: true,

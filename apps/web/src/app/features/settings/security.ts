@@ -1,16 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, errorMessage, Toasts } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { Icon } from '@lifequest/ui';
 import { applyServerValidation, FormField } from '@lifequest/forms';
 @Component({
   selector: 'lq-security-settings',
-  imports: [DatePipe, ReactiveFormsModule, DialogModule, Icon, FormField],
+  imports: [LocalizedDatePipe, ReactiveFormsModule, DialogModule, Icon, FormField],
   templateUrl: './security.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

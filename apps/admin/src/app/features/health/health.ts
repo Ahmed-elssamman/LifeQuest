@@ -1,19 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Api } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { ErrorState, Icon, PageHeader, Skeleton, StatCard } from '@lifequest/ui';
 import { Health } from '../../models';
 @Component({
   selector: 'lq-admin-health',
-  imports: [DatePipe, PageHeader, ErrorState, Skeleton, Icon, StatCard],
+  imports: [LocalizedDatePipe, PageHeader, ErrorState, Skeleton, Icon, StatCard],
   template: `<lq-page-header
       [eyebrow]="i18n.t('KEEP THE FOUNDATIONS HEALTHY', 'حافظ على أساس صحي')"
       [title]="i18n.t('A pulse on the system.', 'نبض النظام.')"
       [description]="
         i18n.t(
-          'Live application and database connectivity checks.',
-          'فحوص مباشرة للتطبيق واتصال قاعدة البيانات.'
+          'Application and database checks, plus email configuration status.',
+          'فحوص التطبيق وقاعدة البيانات، وحالة إعداد البريد الإلكتروني.'
         )
       "
       ><button class="btn btn-secondary" (click)="resource.load()">
@@ -37,23 +36,28 @@ import { Health } from '../../models';
           </p>
         </div>
       </section>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <lq-stat
           [label]="i18n.t('Database', 'قاعدة البيانات')"
-          [value]="data.database"
+          [value]="i18n.t('Connected', 'متصلة')"
           icon="activity"
+        /><lq-stat
+          [label]="i18n.t('Email configuration', 'إعداد البريد الإلكتروني')"
+          [value]="emailStatus(data.email.status)"
+          [suffix]="emailProvider(data.email.provider)"
+          icon="mail"
         /><lq-stat
           [label]="i18n.t('Version', 'الإصدار')"
           [value]="data.version"
           icon="flag"
         /><lq-stat
           [label]="i18n.t('Environment', 'البيئة')"
-          [value]="data.environment"
+          [value]="environmentName(data.environment)"
           icon="shield"
         /><lq-stat
           [label]="i18n.t('Uptime', 'وقت التشغيل')"
           [value]="data.uptime"
-          suffix="s"
+          [suffix]="i18n.t('s', 'ث')"
           icon="sun"
         />
       </div>
@@ -64,4 +68,20 @@ export class AdminHealthPage {
   private readonly api = inject(Api);
   readonly i18n = inject(Preferences);
   readonly resource = this.api.resource<Health>('admin/health');
+  emailStatus(status: Health['email']['status']) {
+    if (status === 'configured') return this.i18n.t('Configured', 'مهيأ');
+    if (status === 'disabled') return this.i18n.t('Disabled', 'معطل');
+    return this.i18n.t('Incomplete', 'غير مكتمل');
+  }
+  emailProvider(provider: string) {
+    if (provider === 'file') return this.i18n.t('Local file', 'ملف محلي');
+    if (provider === 'smtp') return 'SMTP';
+    if (provider === 'resend') return 'Resend';
+    return this.i18n.t('Unknown', 'غير معروف');
+  }
+  environmentName(value: string) {
+    if (value === 'production') return this.i18n.t('Production', 'إنتاج');
+    if (value === 'test') return this.i18n.t('Test', 'اختبار');
+    return this.i18n.t('Development', 'تطوير');
+  }
 }

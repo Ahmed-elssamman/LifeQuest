@@ -10,6 +10,8 @@
     "dev:web": "nx serve web",
     "dev:admin": "nx serve admin",
     "dev:api": "nx serve api",
+    "start:prod": "node dist/api/apps/api/src/main.js",
+    "build:api": "nx build api",
     "build": "nx run-many -t build -p web admin api",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -32,6 +34,7 @@
     "db:check-migrations": "node tools/validate-migrations.mjs",
     "security:check": "node tools/verify-source-safety.mjs",
     "vercel:package": "npm run build && node tools/vercel/package.mjs",
+    "vercel:package:render": "npm run build && node tools/vercel/package.mjs --render",
     "vercel:configure": "node tools/vercel/configure-env.mjs",
     "vercel:verify": "node tools/vercel/verify.mjs",
     "test:performance": "node tools/audit-performance.mjs"
@@ -106,6 +109,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "overrides": {
+    "@nestjs/swagger": {
+      "js-yaml": "5.4.2"
+    },
     "@prisma/config": {
       "deepmerge-ts": "8.0.2"
     },

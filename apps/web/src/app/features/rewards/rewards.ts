@@ -1,6 +1,5 @@
 import { Pagination } from '@lifequest/ui';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService } from 'primeng/api';
@@ -15,14 +14,14 @@ import {
   Toasts,
   XpSummary,
 } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { EmptyState, ErrorState, Icon, PageHeader, SectionTitle, Skeleton } from '@lifequest/ui';
 import { applyServerValidation, FormField, DiscardChanges, UnsavedForm } from '@lifequest/forms';
 @Component({
   selector: 'lq-rewards',
   imports: [
     Pagination,
-    DatePipe,
+    LocalizedDatePipe,
     ReactiveFormsModule,
     DialogModule,
     PageHeader,
@@ -64,6 +63,27 @@ export class RewardsPage {
     category: ['personal'],
     cooldownDays: [0, [Validators.min(0), Validators.max(365)]],
   });
+  rewardTitle(reward: { title: string; titleAr?: string; userId?: string | null }) {
+    if (this.i18n.language() === 'en') return reward.title;
+    return (
+      reward.titleAr ||
+      (reward.userId === null ? 'اسم المكافأة غير متاح بالعربية بعد.' : reward.title)
+    );
+  }
+  rewardDescription(reward: Reward) {
+    if (this.i18n.language() === 'en') return reward.description;
+    return (
+      reward.descriptionAr ||
+      (reward.userId === null ? 'وصف هذه المكافأة غير متاح بالعربية بعد.' : reward.description)
+    );
+  }
+  rewardCategory(reward: { category: string; categoryAr?: string; userId?: string | null }) {
+    if (this.i18n.language() === 'en') return reward.category;
+    return (
+      reward.categoryAr ||
+      (reward.userId === null ? 'فئة المكافأة' : this.i18n.label(reward.category))
+    );
+  }
   create() {
     this.editing.set(null);
     this.form.reset({ cost: 150, icon: 'gift', category: 'personal', cooldownDays: 0 });
@@ -195,7 +215,7 @@ export class RewardsPage {
       header: this.i18n.t('You’ve earned a little joy.', 'استحققت قليلاً من الفرح.'),
       message: this.i18n.t(
         `Spend ${reward.cost} XP on ${reward.title}? You can undo this within five minutes.`,
-        `استخدم ${reward.cost} نقطة مقابل ${reward.title}؟ يمكنك التراجع خلال خمس دقائق.`,
+        `استخدم ${reward.cost} نقطة مقابل ${this.rewardTitle(reward)}؟ يمكنك التراجع خلال خمس دقائق.`,
       ),
       acceptLabel: this.i18n.t('Enjoy this reward', 'استمتع بالمكافأة'),
       rejectLabel: this.i18n.t('Not yet', 'ليس الآن'),
@@ -212,7 +232,7 @@ export class RewardsPage {
       this.keys.delete(reward.id);
       this.toasts.success(
         this.i18n.t('This one is for you. Enjoy.', 'هذه لك. استمتع.'),
-        reward.title,
+        this.rewardTitle(reward),
       );
       await Promise.all([
         this.xp.load(),

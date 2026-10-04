@@ -20,6 +20,7 @@ for (const key of [
   'SMTP_HOST',
   'SMTP_USER',
   'SMTP_PASSWORD',
+  'RESEND_API_KEY',
   'DEMO_EMAIL',
   'DEMO_PASSWORD',
   'DEMO_ADMIN_EMAIL',
@@ -27,6 +28,7 @@ for (const key of [
 ])
   delete process.env[key];
 process.env['MAIL_MODE'] = 'development';
+process.env['EMAIL_PROVIDER'] = 'file';
 process.env['WEB_ORIGIN'] = 'http://localhost:4200';
 process.env['ADMIN_ORIGIN'] = 'http://localhost:4201';
 process.env['APP_URL'] = 'http://localhost:4200';

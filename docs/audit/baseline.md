@@ -48,3 +48,7 @@ Date: 2 October 2026. This is a snapshot of the **existing working tree**, which
 - Reward personalization needs an additive schema migration and clear ownership/privacy behavior. No need for ML or an external queue.
 - Future health providers should be documented first; no existing provider or credentials were found. Avoid speculative data tables until a concrete ingestion contract exists.
 - Database-backed tests and browser QA depend on the local isolated PostgreSQL instance. Do not run migration/reset commands against Neon or a shared database.
+
+# Deployment baseline update
+
+The pre-change deployment and email baseline for 2026-10-04 is recorded in [the deployment baseline](../deployment/baseline.md). It includes architecture, checks, warnings, blockers, and pre-existing issues.

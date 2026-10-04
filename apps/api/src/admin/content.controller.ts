@@ -25,6 +25,7 @@ const achievementSchema = z
     title: z.string().min(2).max(160),
     titleAr: z.string().min(2).max(160),
     description: z.string().max(4000),
+    descriptionAr: z.string().max(4000).default(''),
     icon: z.string().max(40),
     condition: z.enum([
       'HABIT_COUNT',
@@ -42,7 +43,9 @@ const achievementSchema = z
 const announcementSchema = z
   .object({
     title: z.string().min(2).max(160),
+    titleAr: z.string().max(160).default(''),
     body: z.string().min(2).max(4000),
+    bodyAr: z.string().max(4000).default(''),
     active: z.boolean().default(true),
   })
   .strict();

@@ -9,7 +9,7 @@ export async function erasePersonalContent(tx: Prisma.TransactionClient, userId:
       bio: '',
       avatarUrl: null,
       timezone: 'UTC',
-      language: 'en',
+      language: 'ar',
       preferredRoutine: '',
       profileVisibility: 'PRIVATE',
       notificationsEnabled: false,

@@ -1,8 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Preferences } from '@lifequest/utilities';
 @Component({
   selector: 'lq-activity-chart',
   template: `<figure>
-    <svg viewBox="0 0 700 180" role="img" [attr.aria-label]="label()" class="w-full">
+    <svg
+      viewBox="0 0 700 180"
+      role="img"
+      [attr.aria-label]="
+        label() ??
+        i18n.t(
+          'Habit actions over the last 28 days. Green dots indicate daily check-ins.',
+          'خطوات العادات خلال آخر ٢٨ يوماً. تشير النقاط الخضراء إلى تسجيل التأمل اليومي.'
+        )
+      "
+      class="w-full"
+    >
       <line x1="12" y1="145" x2="690" y2="145" stroke="currentColor" class="text-line" />
       @for (day of bars(); track day.date) {
         <rect
@@ -28,10 +40,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivityChart {
+  readonly i18n = inject(Preferences);
   readonly items = input.required<{ date: string; habits: number; checkIn: boolean }[]>();
-  readonly label = input(
-    'Habit actions over the last 28 days. Green dots indicate daily check-ins.',
-  );
+  readonly label = input<string>();
   readonly bars = computed(() => {
     const max = Math.max(1, ...this.items().map((item) => item.habits));
     return this.items().map((item, i) => ({

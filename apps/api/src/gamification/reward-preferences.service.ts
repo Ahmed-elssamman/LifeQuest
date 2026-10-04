@@ -62,7 +62,17 @@ export class RewardPreferencesService {
         where: { userId },
         include: {
           reward: {
-            select: { id: true, title: true, category: true, cost: true, icon: true, active: true },
+            select: {
+              id: true,
+              userId: true,
+              title: true,
+              titleAr: true,
+              category: true,
+              categoryAr: true,
+              cost: true,
+              icon: true,
+              active: true,
+            },
           },
         },
         orderBy: { createdAt: 'desc' },

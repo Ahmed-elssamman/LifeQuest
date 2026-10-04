@@ -74,9 +74,7 @@
       @for (item of resource.data()?.items; track item.id) {
         <article class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
-            <span class="badge bg-brand-soft text-brand">{{
-              item.status.replaceAll('_', ' ').toLowerCase()
-            }}</span
+            <span class="badge bg-brand-soft text-brand">{{ i18n.label(item.status) }}</span
             ><span class="text-[10px] text-muted">{{ item.createdAt | date: 'MMM d' }}</span>
           </div>
           <h3 class="text-sm font-semibold">{{ item.title }}</h3>

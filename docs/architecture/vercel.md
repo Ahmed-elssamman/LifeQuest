@@ -1,6 +1,8 @@
-# Vercel deployment
+# Legacy Vercel function deployment
 
-MIRHAL uses two separate Vercel projects. The customer project serves Angular's prerendered public pages, lazy client routes, and a NestJS function under `/api`. The administration project contains only the admin frontend and proxies `/api` to the customer project's production origin. Host-only HttpOnly cookies keep each application's session separate. Both origins must be explicitly allowed by the API.
+This page describes the earlier Vercel-hosted API deployment. It is retained for operators of that existing installation. The MIRHAL production target is **Vercel frontends + Render API + Neon + Resend**; use the current [deployment guide](../deployment/README.md) and `npm run vercel:package:render` for that architecture. Do not run `vercel:configure` for the Render deployment: it configures this legacy function and disables email.
+
+The earlier installation uses two separate Vercel projects. The customer project serves Angular's prerendered public pages, lazy client routes, and a NestJS function under `/api`. The administration project contains only the admin frontend and proxies `/api` to the customer project's production origin. Host-only HttpOnly cookies keep each application's session separate. Both origins must be explicitly allowed by the API.
 
 `apps/api/src/serverless.ts` initializes Nest once per warm instance without listening on a port or starting timers. PostgreSQL remains on Neon. Only the pooled `DATABASE_URL` is installed in Vercel; `DIRECT_URL` is used privately for migrations before deployment. Prisma includes the Vercel Linux/OpenSSL engine. Argon2's Linux native binding is traced into the function.
 

@@ -17,7 +17,16 @@ export class RewardRecommendationsService {
         where: { active: true, OR: [{ userId }, { userId: null }] },
         orderBy: [{ cost: 'asc' }, { id: 'asc' }],
         take: 100,
-        select: { id: true, title: true, category: true, cost: true, contexts: true },
+        select: {
+          id: true,
+          userId: true,
+          title: true,
+          titleAr: true,
+          category: true,
+          categoryAr: true,
+          cost: true,
+          contexts: true,
+        },
       }),
       this.db.rewardRedemption.findMany({
         where: { userId, refundedAt: null },

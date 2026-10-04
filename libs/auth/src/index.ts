@@ -81,11 +81,12 @@ export class AuthStore {
     password: string;
     displayName: string;
     timezone: string;
+    language?: 'ar' | 'en';
   }) {
     const result = await this.api.post<{
       user: User;
       verificationEmail: 'sent' | 'disabled' | 'unavailable';
-    }>('auth/register', input);
+    }>('auth/register', { ...input, language: input.language ?? this.preferences.language() });
     this.setUser(result.user);
     this.verificationDeliveryFailed.set(result.verificationEmail === 'unavailable');
     return result;

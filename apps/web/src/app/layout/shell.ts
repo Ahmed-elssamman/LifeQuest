@@ -1,11 +1,11 @@
 import { Avatar } from '@lifequest/ui';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DrawerModule } from 'primeng/drawer';
 import { Toasts } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { Icon, Logo } from '@lifequest/ui';
 @Component({
   selector: 'lq-shell',
@@ -14,7 +14,7 @@ import { Icon, Logo } from '@lifequest/ui';
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
-    DatePipe,
+    LocalizedDatePipe,
     NgTemplateOutlet,
     DrawerModule,
     Icon,

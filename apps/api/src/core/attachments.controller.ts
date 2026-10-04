@@ -56,6 +56,12 @@ export class AttachmentsController {
       !((png && file.mimetype === 'image/png') || (jpeg && file.mimetype === 'image/jpeg'))
     )
       throw new BadRequestException('Choose a PNG or JPEG image up to 2 MB.');
+    if (
+      !(await this.db.feedback.findFirst({ where: { id, userId: user.id }, select: { id: true } }))
+    )
+      throw new NotFoundException();
+    if ((await this.db.feedbackAttachment.count({ where: { feedbackId: id } })) >= 3)
+      throw new BadRequestException('You can attach up to three images to a conversation.');
     const key = await this.storage.put(file.buffer);
     try {
       return await this.db.atomic(user.id, async (tx) => {

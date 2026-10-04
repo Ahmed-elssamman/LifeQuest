@@ -3,9 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { Request, Response, Express } from 'express';
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
+import { validateStartupEnvironment } from './common/startup';
 
 let application: Promise<Express> | undefined;
 async function initialize() {
+  validateStartupEnvironment();
   const app = configureApp(
     await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
   );

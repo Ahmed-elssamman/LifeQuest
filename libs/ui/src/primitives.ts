@@ -51,19 +51,22 @@ export class ErrorState {
 @Component({
   selector: 'lq-skeleton',
   template:
-    '<div aria-busy="true" aria-label="Loading" class="space-y-5"><div class="skeleton h-8 w-1/3"></div><div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@for (item of [1,2,3]; track item) { <div class="card p-6"><div class="skeleton mb-5 size-11"></div><div class="skeleton mb-3 h-5 w-3/4"></div><div class="skeleton h-3 w-1/2"></div></div> }</div><div class="skeleton h-64 w-full"></div></div>',
+    '<div aria-busy="true" [attr.aria-label]="i18n.t(\'Loading\',\'جارٍ التحميل\')" class="space-y-5"><div class="skeleton h-8 w-1/3"></div><div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@for (item of [1,2,3]; track item) { <div class="card p-6"><div class="skeleton mb-5 size-11"></div><div class="skeleton mb-3 h-5 w-3/4"></div><div class="skeleton h-3 w-1/2"></div></div> }</div><div class="skeleton h-64 w-full"></div></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Skeleton {}
+export class Skeleton {
+  readonly i18n = inject(Preferences);
+}
 @Component({
   selector: 'lq-progress',
   template:
-    '<div role="progressbar" [attr.aria-label]="label()" [attr.aria-valuenow]="rounded()" aria-valuemin="0" aria-valuemax="100" class="h-1.5 overflow-hidden rounded-full bg-line"><div class="h-full origin-left rounded-full" [class]="color()" [style.transform]="\'scaleX(\' + rounded()/100 + \')\'" style="transition: transform 450ms ease"></div></div>',
+    '<div role="progressbar" [attr.aria-label]="label() || i18n.t(\'Progress\',\'التقدم\')" [attr.aria-valuenow]="rounded()" aria-valuemin="0" aria-valuemax="100" class="h-1.5 overflow-hidden rounded-full bg-line"><div class="h-full origin-left rtl:origin-right rounded-full" [class]="color()" [style.transform]="\'scaleX(\' + rounded()/100 + \')\'" style="transition: transform 450ms ease"></div></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Progress {
+  readonly i18n = inject(Preferences);
   readonly value = input(0);
-  readonly label = input('Progress');
+  readonly label = input<string>();
   readonly color = input('bg-brand');
   rounded() {
     return Math.max(0, Math.min(100, Math.round(this.value())));
@@ -97,11 +100,12 @@ export class StatCard {
   selector: 'lq-section-title',
   imports: [RouterLink, Icon],
   template:
-    '<div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-base font-semibold tracking-tight">{{ title() }}</h2>@if (link()) { <a [routerLink]="link()" class="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-brand">{{ linkLabel() }}<lq-icon name="arrow-right" [size]="14" /></a> }<ng-content /></div>',
+    '<div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-base font-semibold tracking-tight">{{ title() }}</h2>@if (link()) { <a [routerLink]="link()" class="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-brand">{{ linkLabel() || i18n.t(\'View all\',\'عرض الكل\') }}<lq-icon name="arrow-right" [size]="14" /></a> }<ng-content /></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SectionTitle {
+  readonly i18n = inject(Preferences);
   readonly title = input.required<string>();
   readonly link = input('');
-  readonly linkLabel = input('View all');
+  readonly linkLabel = input<string>();
 }

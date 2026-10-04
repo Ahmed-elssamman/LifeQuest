@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Api, Achievement, XpSummary } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { ErrorState, Icon, PageHeader, Progress, ProgressRing, Skeleton } from '@lifequest/ui';
 @Component({
   selector: 'lq-achievements',
-  imports: [DatePipe, PageHeader, ErrorState, Skeleton, Icon, Progress, ProgressRing],
+  imports: [LocalizedDatePipe, PageHeader, ErrorState, Skeleton, Icon, Progress, ProgressRing],
   template: `
     <lq-page-header
       [eyebrow]="i18n.t('LOOK HOW FAR YOU HAVE COME', 'انظر كم تقدمت')"
@@ -61,7 +60,14 @@ import { ErrorState, Icon, PageHeader, Progress, ProgressRing, Skeleton } from '
               }
             </div>
             <h2 class="text-base font-semibold">{{ i18n.t(item.title, item.titleAr) }}</h2>
-            <p class="mb-5 mt-2 min-h-12 text-xs leading-6 text-muted">{{ item.description }}</p>
+            <p class="mb-5 mt-2 min-h-12 text-xs leading-6 text-muted">
+              {{
+                i18n.t(
+                  item.description,
+                  item.descriptionAr || 'وصف هذا الإنجاز غير متاح بالعربية بعد.'
+                )
+              }}
+            </p>
             <lq-progress [value]="item.unlockedAt ? 100 : (item.progress / item.threshold) * 100" />
             <div class="mt-3 flex justify-between text-[10px] text-muted">
               <span>{{

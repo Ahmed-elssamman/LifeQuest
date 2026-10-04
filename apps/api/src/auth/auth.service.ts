@@ -42,7 +42,13 @@ export class AuthService {
       data: {
         email: input.email,
         passwordHash,
-        profile: { create: { displayName: input.displayName, timezone: input.timezone } },
+        profile: {
+          create: {
+            displayName: input.displayName,
+            timezone: input.timezone,
+            language: input.language,
+          },
+        },
         events: { create: { name: 'signup' } },
       },
       select: safeUser,
@@ -51,8 +57,9 @@ export class AuthService {
     let verificationEmail: 'sent' | 'disabled' | 'unavailable' = 'disabled';
     if (this.mail.enabled) {
       try {
-        await this.issueEmailToken(user.id, input.email, 'VERIFY_EMAIL');
-        verificationEmail = 'sent';
+        verificationEmail = (await this.issueEmailToken(user.id, input.email, 'VERIFY_EMAIL'))
+          ? 'sent'
+          : 'unavailable';
       } catch (error) {
         if (!(error instanceof ServiceUnavailableException)) throw error;
         // The account already exists. Keep it usable and offer verification retry.
@@ -111,15 +118,29 @@ export class AuthService {
   async issueEmailToken(userId: string, email: string, purpose: TokenPurpose) {
     this.mail.assertConfigured();
     const token = randomBytes(32).toString('base64url');
-    await this.db.authToken.create({
-      data: {
-        userId,
-        purpose,
-        tokenHash: hashToken(token),
-        expiresAt: new Date(Date.now() + (purpose === 'RESET_PASSWORD' ? 30 : 1440) * 60_000),
-      },
+    const issued = await this.db.atomic(userId, async (tx) => {
+      // The user row lock makes this budget effective across API instances.
+      const recent = await tx.authToken.count({
+        where: { userId, purpose, createdAt: { gte: new Date(Date.now() - 60 * 60_000) } },
+      });
+      if (recent >= 5) return false;
+      await tx.authToken.create({
+        data: {
+          userId,
+          purpose,
+          tokenHash: hashToken(token),
+          expiresAt: new Date(Date.now() + (purpose === 'RESET_PASSWORD' ? 30 : 1440) * 60_000),
+        },
+      });
+      return true;
     });
-    await this.mail.send(email, purpose, token);
+    if (!issued) return false;
+    const profile = await this.db.profile.findUnique({
+      where: { userId },
+      select: { language: true },
+    });
+    await this.mail.send(email, purpose, token, profile?.language === 'en' ? 'en' : 'ar');
+    return true;
   }
   async forgot(email: string) {
     this.mail.assertConfigured();
@@ -127,7 +148,14 @@ export class AuthService {
       where: { email },
       select: { id: true, status: true },
     });
-    if (user?.status === 'ACTIVE') await this.issueEmailToken(user.id, email, 'RESET_PASSWORD');
+    if (user?.status === 'ACTIVE') {
+      try {
+        await this.issueEmailToken(user.id, email, 'RESET_PASSWORD');
+      } catch (error) {
+        // A provider failure must not reveal whether this address belongs to an account.
+        if (!(error instanceof ServiceUnavailableException)) throw error;
+      }
+    }
     return { message: 'If an account exists, recovery instructions are on their way.' };
   }
   async consume(token: string, purpose: TokenPurpose, password?: string) {

@@ -219,6 +219,7 @@ test('friends accept invitations and make server-scored challenge progress', asy
       email,
       password: randomBytes(18).toString('base64url'),
       displayName: 'Challenge partner',
+      language: 'en',
     },
   });
   expect(registration.ok()).toBe(true);
@@ -297,13 +298,16 @@ test('staff publishes a quest template and explorers retain unsaved edits', asyn
   await page.getByRole('button', { name: 'New template', exact: true }).click();
   await page.locator('#template-title').fill(title);
   await page.locator('#template-ar').fill('أسبوع من الخطوات الهادفة');
+  await page.locator('#template-description').fill('A small step can begin a good week.');
+  await page.locator('#template-description-ar').fill('خطوة صغيرة قد تبدأ أسبوعاً جيداً.');
   await page.locator('#template-items').fill('Take one small step\nNotice what helped');
+  await page.locator('#template-items-ar').fill('اتخذ خطوة صغيرة\nلاحظ ما ساعدك');
   await page.getByRole('button', { name: 'Save template', exact: true }).click();
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
   await login(page);
   await page.goto('/quests');
   await page.locator('summary').filter({ hasText: 'A little inspiration for this week' }).click();
-  await page.getByRole('button', { name: title, exact: true }).click();
+  await page.getByRole('button', { name: new RegExp(title) }).click();
   await expect(page.locator('#quest-items')).toHaveValue('Take one small step\nNotice what helped');
   await page.locator('#quest-title').fill(title + ' adapted');
   await page.getByRole('button', { name: 'Close', exact: true }).click();
@@ -314,6 +318,14 @@ test('staff publishes a quest template and explorers retain unsaved edits', asyn
   await expect(page.locator('#quest-title')).toHaveValue(title + ' adapted');
   await page.locator('p-dialog button[type=submit]').click();
   await expect(page.getByRole('heading', { name: title + ' adapted', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to Arabic' }).click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.goto('/quests');
+  await page.locator('summary').filter({ hasText: 'قليل من الإلهام لهذا الأسبوع' }).click();
+  const arabicTemplate = page.getByRole('button', { name: /أسبوع من الخطوات الهادفة/ });
+  await expect(arabicTemplate).toContainText('خطوة صغيرة قد تبدأ أسبوعاً جيداً.');
+  await arabicTemplate.click();
+  await expect(page.locator('#quest-items')).toHaveValue('اتخذ خطوة صغيرة\nلاحظ ما ساعدك');
 });
 
 test('customer routes support Arabic dark mode, keyboard contrast and small screens', async ({
@@ -326,6 +338,9 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
     await appearance(page, mode);
     await page.setViewportSize({ width: mode === 'dark' ? 320 : 1280, height: 900 });
     for (const route of [
+      'onboarding',
+      'dashboard',
+      'today',
       'goals',
       'projects',
       'tasks',
@@ -352,6 +367,14 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
         await page.locator('html').evaluate((element) => element.classList.contains('dark')),
       ).toBe(mode === 'dark');
       await expect(page.locator('lq-skeleton')).toHaveCount(0);
+      if (mode === 'dark' && route === 'rewards')
+        await expect(page.getByRole('heading', { name: 'صباح قهوة هادئ' })).toBeVisible();
+      if (mode === 'dark' && route === 'achievements')
+        await expect(
+          page.getByText('مارس عادة يومية سبعة أيام متتالية. تُحسب الخطوات الصغيرة أيضاً.'),
+        ).toBeVisible();
+      if (mode === 'dark' && route === 'journey')
+        await expect(page.getByText('تعمق قليلاً وتعلم شيئاً جديداً.')).toBeVisible();
       if (
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )
@@ -382,6 +405,9 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
 test('administration remains accessible on mobile and desktop', async ({ page }) => {
   test.setTimeout(150000);
   await login(page, true);
+  await page.goto('http://localhost:4301/users');
+  const detailPath = await page.locator('a[href^="/users/"]').first().getAttribute('href');
+  if (!detailPath) throw new Error('Admin user detail route is unavailable');
   const findings: unknown[] = [];
   for (const mode of ['light', 'dark'] as const) {
     await appearance(page, mode, true);
@@ -389,6 +415,7 @@ test('administration remains accessible on mobile and desktop', async ({ page })
     for (const route of [
       'overview',
       'users',
+      detailPath.slice(1),
       'feedback',
       'challenges',
       'analytics',
@@ -413,6 +440,18 @@ test('administration remains accessible on mobile and desktop', async ({ page })
         await expect(page.locator('lq-planning-insights')).toBeVisible();
       }
       await expect(page.locator('lq-skeleton')).toHaveCount(0);
+      if (
+        mode === 'dark' &&
+        ['content/rewards', 'content/achievements', 'content/announcements'].includes(route)
+      ) {
+        await page.getByRole('button', { name: 'إنشاء جديد' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        const bounds = await dialog.boundingBox();
+        if (!bounds || bounds.x < -1 || bounds.x + bounds.width > 321)
+          findings.push({ route, mode, rule: 'dialog-overflow', bounds });
+        await page.getByRole('button', { name: 'إغلاق' }).click();
+      }
       if (
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )

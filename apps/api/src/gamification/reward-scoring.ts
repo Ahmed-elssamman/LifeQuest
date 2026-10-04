@@ -12,8 +12,8 @@ type History = {
   reward: { category: string };
 };
 
-export function rankRewards(
-  rewards: Candidate[],
+export function rankRewards<T extends Candidate>(
+  rewards: T[],
   history: History[],
   favoriteIds: Set<string>,
   balance: number,

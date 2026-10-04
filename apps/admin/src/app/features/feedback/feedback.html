@@ -50,8 +50,8 @@
         (click)="edit(item)"
       >
         <div class="mb-3 flex flex-wrap items-center gap-2">
-          <span class="badge bg-brand-soft text-brand">{{ item.category }}</span
-          ><span class="badge bg-canvas text-muted">{{ item.status.replaceAll('_', ' ') }}</span
+          <span class="badge bg-brand-soft text-brand">{{ i18n.label(item.category) }}</span
+          ><span class="badge bg-canvas text-muted">{{ i18n.label(item.status) }}</span
           ><span class="ms-auto text-[10px] text-muted">{{
             item.createdAt | date: 'MMM d, y'
           }}</span>
@@ -139,9 +139,9 @@
           </select></lq-field
         ><lq-field id="admin-feedback-priority" [label]="i18n.t('Priority', 'الأولوية')"
           ><select id="admin-feedback-priority" class="field" formControlName="priority">
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
+            <option value="LOW">{{ i18n.label('LOW') }}</option>
+            <option value="MEDIUM">{{ i18n.label('MEDIUM') }}</option>
+            <option value="HIGH">{{ i18n.label('HIGH') }}</option>
           </select></lq-field
         >
       </div>

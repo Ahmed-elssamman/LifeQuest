@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { feedbackAdminSchema, InputOf, paginationSchema } from '@lifequest/contracts';
 import { CurrentUser, Identity, Roles, Validate } from '../common/http';
 import { Database } from '../common/database';
+import { MailAdapter } from '../auth/mail.adapter';
 import { AdminService } from './admin.service';
 import { pageArgs, pageResult } from '../core/ownership';
 const allStaff: Role[] = [
@@ -25,6 +26,7 @@ export class AdminController {
   constructor(
     @Inject(AdminService) private readonly service: AdminService,
     @Inject(Database) private readonly db: Database,
+    @Inject(MailAdapter) private readonly mail: MailAdapter,
   ) {}
   @Get('overview') overview() {
     return this.service.overview();
@@ -127,6 +129,7 @@ export class AdminController {
     return {
       status: 'healthy',
       database: 'connected',
+      email: this.mail.configurationHealth(),
       version: '0.1.0',
       environment: process.env['NODE_ENV'] ?? 'development',
       uptime: Math.floor(process.uptime()),

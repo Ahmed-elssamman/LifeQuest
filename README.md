@@ -91,18 +91,18 @@ The seed creates reference data. To create development accounts, set the optiona
 <details>
 <summary><strong>Environment and local services</strong></summary>
 
-`.env.example` documents the configuration. `.env` stays private and is ignored by Git.
+`.env.example` documents the configuration. `.env` stays private and is ignored by Git. For the split Vercel frontend, Render API, Neon database, and Resend email setup, follow the [deployment guide](docs/deployment/README.md) and [environment checklist](docs/deployment/environment.md). The Vercel API workflow below remains the existing deployment path.
 
-| Setting                                     | Purpose                                                                                                                                   |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL` / `DIRECT_URL`               | Runtime and migration connections. With Neon, use a pooled runtime URL and a direct migration URL. These never belong in browser bundles. |
-| `TEST_DATABASE_URL`                         | A dedicated **local** database ending in `_test`. Integration tests reset it; E2E resets its separate `lifequest_e2e_test` database.      |
-| `WEB_ORIGIN` / `ADMIN_ORIGIN` / `APP_URL`   | Allowed browser origins and links in email.                                                                                               |
-| `PORT` / `SSR_ALLOWED_HOSTS`                | API port and explicit public SSR host allowlist.                                                                                          |
-| `MAIL_MODE` / `SMTP_*`                      | Local development messages, disabled delivery, or configured production SMTP. Development links stay in `.local/mail/`.                   |
-| `UPLOAD_DIR`                                | Local private feedback storage, defaulting to `.local/uploads`. Non-Vercel production requires persistent storage.                        |
-| `VERCEL_WEB_ORIGIN` / `VERCEL_ADMIN_ORIGIN` | Production aliases used by the Vercel packaging and configuration scripts.                                                                |
-| `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET`     | Private Vercel storage and scheduled-maintenance credentials.                                                                             |
+| Setting                                                      | Purpose                                                                                                                                   |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL` / `DIRECT_URL`                                | Runtime and migration connections. With Neon, use a pooled runtime URL and a direct migration URL. These never belong in browser bundles. |
+| `TEST_DATABASE_URL`                                          | A dedicated **local** database ending in `_test`. Integration tests reset it; E2E resets its separate `lifequest_e2e_test` database.      |
+| `WEB_ORIGIN` / `ADMIN_ORIGIN` / `APP_URL`                    | Allowed browser origins and links in email.                                                                                               |
+| `PORT` / `SSR_ALLOWED_HOSTS`                                 | API port and explicit public SSR host allowlist.                                                                                          |
+| `MAIL_MODE` / `EMAIL_PROVIDER` / `SMTP_*` / `RESEND_API_KEY` | Local file/Gmail SMTP or production Resend API delivery; see the [email guide](docs/deployment/email-provider.md).                        |
+| `UPLOAD_DIR`                                                 | Local private feedback storage, defaulting to `.local/uploads`. Non-Vercel production requires persistent storage.                        |
+| `VERCEL_WEB_ORIGIN` / `VERCEL_ADMIN_ORIGIN`                  | Production aliases used by the Vercel packaging and configuration scripts.                                                                |
+| `BLOB_READ_WRITE_TOKEN` / `CRON_SECRET`                      | Private Vercel storage and scheduled-maintenance credentials.                                                                             |
 
 With PostgreSQL binaries on your PATH, `npm run db:local` provisions isolated local databases without replacing existing Neon configuration. See the [database guide](docs/architecture/database.md) for details.
 
@@ -175,26 +175,18 @@ Integration and E2E checks require the isolated local test database described ab
 
 ## Deployment
 
-| Live application        | Address                                                                    |
-| ----------------------- | -------------------------------------------------------------------------- |
-| Customer frontend + API | **[lifequest-web-cyan.vercel.app](https://lifequest-web-cyan.vercel.app)** |
-| Administration frontend | **[lifequest-admin.vercel.app](https://lifequest-admin.vercel.app)**       |
+The target deployment serves the customer and admin Angular apps from the confirmed `lifequest-web` and `lifequest-admin` Vercel projects, the NestJS API from Render, and PostgreSQL from Neon. The owner confirmed the existing Neon database and its reviewed Arabic migrations are applied. The new Render API, split Vercel routing, and transactional email delivery have not been deployed or verified.
 
-The customer project serves prerendered public pages, client-rendered private routes, and the NestJS API as a Vercel function. The admin project serves its own frontend and proxies API calls to the customer origin.
-
-After linking both projects and configuring the database, production aliases, and private Blob store as described in the [deployment guide](docs/architecture/vercel.md):
+Follow the [deployment guide](docs/deployment/README.md) and [environment checklist](docs/deployment/environment.md). Review the Neon target before applying migrations. After Render has a working HTTPS origin, set `VERCEL_WEB_ORIGIN`, `VERCEL_ADMIN_ORIGIN`, and `VERCEL_API_ORIGIN` in the private packaging environment, then run:
 
 ```bash
-npm run db:generate
-npm run db:deploy
-npm run vercel:configure
-npm run vercel:package
+npm run vercel:package:render
 vercel deploy --prebuilt --prod --yes --cwd .local/vercel/web
 vercel deploy --prebuilt --prod --yes --cwd .local/vercel/admin
 npm run vercel:verify
 ```
 
-Deployments use Vercel's Build Output API v3. The repository's CI validates changes; production releases use the explicit deployment commands above. Do not import the monorepo with Vercel's default build settings without configuring this packaging workflow.
+The Render packaging command requires all three HTTPS origins. The earlier bundled Vercel API route is documented separately in [the legacy Vercel architecture](docs/architecture/vercel.md); it does not provide the requested Render and transactional email deployment. Production releases require live health, auth, CORS, email, storage, and language checks before they can be called complete.
 
 <details>
 <summary><strong>Self-hosting</strong></summary>

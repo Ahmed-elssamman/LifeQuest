@@ -48,6 +48,7 @@ export interface Audit {
 export interface Health {
   status: string;
   database: string;
+  email: { provider: string; status: 'configured' | 'disabled' | 'incomplete' };
   version: string;
   environment: string;
   uptime: number;

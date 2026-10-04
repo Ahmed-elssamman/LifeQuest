@@ -44,6 +44,7 @@ export const registerSchema = z
       .transform((value) => value.toLowerCase()),
     password: z.string().min(12).max(128),
     displayName: title,
+    language: z.enum(['ar', 'en']).default('ar'),
     timezone: z
       .string()
       .max(80)
@@ -225,10 +226,13 @@ export const questSchema = z
 export const rewardSchema = z
   .object({
     title,
+    titleAr: text.default(''),
     description: text.default(''),
+    descriptionAr: text.default(''),
     cost: z.number().int().min(50).max(100000),
     icon: z.string().max(30).default('gift'),
     category: z.string().max(40).default('personal'),
+    categoryAr: z.string().max(40).default(''),
     cooldownDays: z.number().int().min(0).max(365).default(0),
     contexts: z
       .array(z.enum(['morning', 'afternoon', 'evening']))
@@ -297,12 +301,18 @@ export const questTemplateSchema = z
     title,
     titleAr: title,
     description: text.default(''),
+    descriptionAr: text.default(''),
     areaId: id,
     difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
     active: z.boolean().default(true),
     items: z.array(title).min(1).max(12),
+    itemsAr: z.array(title).max(12).optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => !value.itemsAr || value.itemsAr.length === value.items.length, {
+    path: ['itemsAr'],
+    message: 'Provide one Arabic step for each English step.',
+  });
 
 export const journeyQuerySchema = z
   .object({

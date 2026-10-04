@@ -49,7 +49,7 @@
     <div class="grid gap-3 sm:grid-cols-2">
       @for (item of recommendations.data(); track item.reward.id) {
         <div class="card p-4">
-          <p class="font-medium">{{ item.reward.title }} · {{ item.reward.cost }} XP</p>
+          <p class="font-medium">{{ rewardTitle(item.reward) }} · {{ item.reward.cost }} XP</p>
           <p class="mt-1 text-xs text-muted">{{ recommendationReason(item) }}</p>
           <button class="btn btn-quiet mt-2 text-xs" (click)="saveFor(item.reward)">
             {{ i18n.t('Save for this', 'ادخر لها') }}
@@ -71,7 +71,7 @@
       @for (item of savings.data()?.items; track item.rewardId) {
         <div class="card p-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="font-medium">{{ item.reward.title }}</p>
+            <p class="font-medium">{{ rewardTitle(item.reward) }}</p>
             <button class="btn btn-quiet text-xs" (click)="removeSaving(item.rewardId)">
               {{ i18n.t('Remove goal', 'إزالة الهدف') }}
             </button>
@@ -80,7 +80,7 @@
             class="mt-3 w-full"
             [value]="item.currentXp"
             [max]="item.targetXp"
-            [attr.aria-label]="item.reward.title"
+            [attr.aria-label]="rewardTitle(item.reward)"
           ></progress>
           <p class="text-xs text-muted">
             {{ item.currentXp }} / {{ item.targetXp }} XP ·
@@ -120,9 +120,9 @@
           /></span>
         </div>
         <div class="flex flex-1 flex-col p-5">
-          <p class="eyebrow text-[9px]">{{ reward.category }}</p>
-          <h2 class="mt-2 text-base font-semibold">{{ reward.title }}</h2>
-          <p class="mb-5 mt-2 text-xs leading-6 text-muted">{{ reward.description }}</p>
+          <p class="eyebrow text-[9px]">{{ rewardCategory(reward) }}</p>
+          <h2 class="mt-2 text-base font-semibold">{{ rewardTitle(reward) }}</h2>
+          <p class="mb-5 mt-2 text-xs leading-6 text-muted">{{ rewardDescription(reward) }}</p>
           <div class="mb-4 flex flex-wrap gap-2">
             <button
               class="btn btn-quiet text-xs"
@@ -205,7 +205,7 @@
             ><lq-icon [name]="item.reward.icon" [size]="19"
           /></span>
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-medium">{{ item.reward.title }}</p>
+            <p class="text-xs font-medium">{{ rewardTitle(item.reward) }}</p>
             <p class="mt-1 text-[10px] text-muted">{{ item.createdAt | date: 'MMM d, h:mm a' }}</p>
           </div>
           <span class="text-xs text-muted">{{
@@ -259,7 +259,7 @@
     <div class="card divide-y divide-line">
       @for (reward of mine.data()?.items; track reward.id) {
         <div class="flex flex-wrap items-center justify-between gap-3 p-4">
-          <span class="text-sm">{{ reward.title }} · {{ reward.cost }} XP</span>
+          <span class="text-sm">{{ rewardTitle(reward) }} · {{ reward.cost }} XP</span>
           <div class="flex gap-2">
             <button class="btn btn-quiet text-xs" (click)="edit(reward)">
               {{ i18n.t('Edit', 'تعديل') }}

@@ -14,6 +14,7 @@ const context = await browser.newContext({
   viewport: { width: 1280, height: 900 },
 });
 const page = await context.newPage();
+await page.addInitScript(() => window.localStorage.setItem('lq-language', 'en'));
 page.setDefaultTimeout(30000);
 const email = `deployment-${randomBytes(8).toString('hex')}@example.test`;
 const password = randomBytes(24).toString('base64url');

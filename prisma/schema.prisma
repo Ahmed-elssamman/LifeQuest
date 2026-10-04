@@ -199,7 +199,7 @@ model Profile {
   bio                   String     @default("")
   avatarUrl             String?
   timezone              String     @default("Africa/Cairo")
-  language              String     @default("en")
+  language              String     @default("ar")
   theme                 String     @default("system")
   profileVisibility     Visibility @default(PRIVATE)
   shareChallengeScore   Boolean    @default(true)
@@ -277,15 +277,16 @@ model Season {
 }
 
 model SeasonPhase {
-  id          String         @id @default(cuid())
-  seasonId    String
-  season      Season         @relation(fields: [seasonId], references: [id])
-  title       String
-  titleAr     String
-  month       Int
-  year        Int
-  description String
-  journeys    MonthJourney[]
+  id            String         @id @default(cuid())
+  seasonId      String
+  season        Season         @relation(fields: [seasonId], references: [id])
+  title         String
+  titleAr       String
+  month         Int
+  year          Int
+  description   String
+  descriptionAr String         @default("")
+  journeys      MonthJourney[]
 
   @@unique([seasonId, year, month])
 }
@@ -569,20 +570,21 @@ model Level {
 }
 
 model Achievement {
-  id          String            @id @default(cuid())
-  slug        String            @unique
-  title       String
-  titleAr     String
-  description String
-  icon        String
-  condition   String
-  threshold   Int
-  xpReward    Int               @default(50)
-  hidden      Boolean           @default(false)
-  active      Boolean           @default(true)
-  users       UserAchievement[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id            String            @id @default(cuid())
+  slug          String            @unique
+  title         String
+  titleAr       String
+  description   String
+  descriptionAr String            @default("")
+  icon          String
+  condition     String
+  threshold     Int
+  xpReward      Int               @default(50)
+  hidden        Boolean           @default(false)
+  active        Boolean           @default(true)
+  users         UserAchievement[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model UserAchievement {
@@ -596,24 +598,27 @@ model UserAchievement {
 }
 
 model Reward {
-  id              String             @id @default(cuid())
+  id              String                @id @default(cuid())
   userId          String?
-  user            User?              @relation(fields: [userId], references: [id])
+  user            User?                 @relation(fields: [userId], references: [id])
   title           String
-  description     String             @default("")
+  titleAr         String                @default("")
+  description     String                @default("")
+  descriptionAr   String                @default("")
   cost            Int
-  active          Boolean            @default(true)
-  icon            String             @default("gift")
-  category        String             @default("personal")
-  cooldownDays    Int                @default(0)
-  contexts        String[]           @default([])
+  active          Boolean               @default(true)
+  icon            String                @default("gift")
+  category        String                @default("personal")
+  categoryAr      String                @default("")
+  cooldownDays    Int                   @default(0)
+  contexts        String[]              @default([])
   redemptionLimit Int?
-  notes           String             @default("")
+  notes           String                @default("")
   redemptions     RewardRedemption[]
   favorites       RewardFavorite[]
   savingsTargets  RewardSavingsTarget[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 
   @@index([userId, active])
 }
@@ -867,7 +872,9 @@ model HelpArticle {
 model Announcement {
   id        String   @id @default(cuid())
   title     String
+  titleAr   String   @default("")
   body      String
+  bodyAr    String   @default("")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -899,17 +906,18 @@ model ChallengeHabitSnapshot {
 }
 
 model QuestTemplate {
-  id          String              @id @default(cuid())
-  title       String
-  titleAr     String
-  description String              @default("")
-  areaId      String
-  area        LifeArea            @relation(fields: [areaId], references: [id])
-  difficulty  Difficulty          @default(MEDIUM)
-  active      Boolean             @default(true)
-  items       QuestTemplateItem[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id            String              @id @default(cuid())
+  title         String
+  titleAr       String
+  description   String              @default("")
+  descriptionAr String              @default("")
+  areaId        String
+  area          LifeArea            @relation(fields: [areaId], references: [id])
+  difficulty    Difficulty          @default(MEDIUM)
+  active        Boolean             @default(true)
+  items         QuestTemplateItem[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model QuestTemplateItem {
@@ -917,6 +925,7 @@ model QuestTemplateItem {
   templateId String
   template   QuestTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   title      String
+  titleAr    String        @default("")
   sortOrder  Int           @default(0)
 
   @@index([templateId])

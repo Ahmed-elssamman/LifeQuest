@@ -183,6 +183,7 @@ export interface Achievement {
   title: string;
   titleAr: string;
   description: string;
+  descriptionAr: string;
   icon: string;
   threshold: number;
   progress: number;
@@ -221,10 +222,13 @@ export interface Reward {
   id: string;
   userId: string | null;
   title: string;
+  titleAr: string;
   description: string;
+  descriptionAr: string;
   cost: number;
   icon: string;
   category: string;
+  categoryAr: string;
   active: boolean;
   favorite?: boolean;
   cooldownDays: number;
@@ -237,7 +241,7 @@ export interface Redemption {
   createdAt: string;
   refundedAt: string | null;
   rating: number | null;
-  reward: { title: string; icon: string };
+  reward: { title: string; titleAr: string; userId: string | null; icon: string };
 }
 export interface RewardSaving {
   rewardId: string;
@@ -246,10 +250,16 @@ export interface RewardSaving {
   remainingXp: number;
   progressPercent: number;
   status: 'SAVING' | 'READY' | 'UNAVAILABLE';
-  reward: Pick<Reward, 'id' | 'title' | 'category' | 'cost' | 'icon' | 'active'>;
+  reward: Pick<
+    Reward,
+    'id' | 'userId' | 'title' | 'titleAr' | 'category' | 'categoryAr' | 'cost' | 'icon' | 'active'
+  >;
 }
 export interface RewardRecommendation {
-  reward: Pick<Reward, 'id' | 'title' | 'category' | 'cost' | 'contexts'>;
+  reward: Pick<
+    Reward,
+    'id' | 'userId' | 'title' | 'titleAr' | 'category' | 'categoryAr' | 'cost' | 'contexts'
+  >;
   score: number;
   reason:
     | 'favorite'
@@ -332,6 +342,7 @@ export interface Journey {
       month: number;
       year: number;
       description: string;
+      descriptionAr: string;
     }[];
   }[];
   reflections: {
@@ -351,9 +362,10 @@ export interface QuestTemplate {
   title: string;
   titleAr: string;
   description: string;
+  descriptionAr: string;
   areaId: string;
   area: Area;
   difficulty: string;
   active: boolean;
-  items: { id: string; title: string; sortOrder: number }[];
+  items: { id: string; title: string; titleAr: string; sortOrder: number }[];
 }

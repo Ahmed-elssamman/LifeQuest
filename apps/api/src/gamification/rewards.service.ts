@@ -126,7 +126,7 @@ export class RewardsService {
           body: `Enjoy ${reward.title}. Rest and enjoyment belong in your journey.`,
           arabic: {
             title: 'تستحق هذه المكافأة',
-            body: `استمتع بـ ${reward.title}. الراحة والمتعة جزء من رحلتك.`,
+            body: `استمتع بـ ${reward.titleAr || (reward.userId === null ? 'مكافأتك' : reward.title)}. الراحة والمتعة جزء من رحلتك.`,
           },
           href: '/rewards',
         },

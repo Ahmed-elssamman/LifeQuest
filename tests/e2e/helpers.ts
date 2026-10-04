@@ -26,7 +26,7 @@ export async function appearance(page: Page, mode: 'light' | 'dark', admin = fal
 
 export async function inspectLayout(page: Page, application: string, route: string, mode: string) {
   const original = page.viewportSize()!;
-  for (const width of [320, 360, 390, 412, 480, 768, 1024, 1280, 1440, 1600]) {
+  for (const width of [320, 360, 390, 412, 480, 768, 1024, 1280, 1440, 1600, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
