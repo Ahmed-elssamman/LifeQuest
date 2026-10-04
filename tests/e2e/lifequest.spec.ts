@@ -460,6 +460,14 @@ test('administration remains accessible on mobile and desktop', async ({ page })
         await page.getByRole('button', { name: createName, exact: true }).first().click();
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible();
+        if (route === 'content/achievements') {
+          await expect(page.locator('#content-icon option[value="award"]')).toHaveText(
+            mode === 'dark' ? 'جائزة' : 'Award',
+          );
+          await expect(page.locator('#content-condition option[value="HABIT_COUNT"]')).toHaveText(
+            mode === 'dark' ? 'العادات المكتملة' : 'Completed habits',
+          );
+        }
         for (const width of [320, 360]) {
           await page.setViewportSize({ width, height: 900 });
           const layout = await dialog.evaluate((element) => {

@@ -110,7 +110,7 @@
             @case ('select') {
               <select [id]="'content-' + field.key" class="field" [formControlName]="field.key">
                 @for (option of field.options; track option) {
-                  <option [value]="option">{{ option }}</option>
+                  <option [value]="option.value">{{ i18n.t(option.label, option.ar) }}</option>
                 }
               </select>
             }
