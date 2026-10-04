@@ -1,5 +1,7 @@
 # MIRHAL deployment: Vercel + Render + Neon
 
+Start with the [operator setup runbook](operator-setup.md) for the remaining Render, Resend, DNS, and Vercel steps. The [environment checklist](environment.md) lists every variable and its placement.
+
 ## Local
 
 1. Use Node 22.12+ and run `npm ci`.
