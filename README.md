@@ -154,7 +154,8 @@ The [GitHub Actions workflow](.github/workflows/ci.yml) runs formatting, source-
 
 ```bash
 npm ls --all
-npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+node tools/check-audit-baseline.mjs
 npm run format:check
 npm run security:check
 npm run lint
@@ -170,6 +171,8 @@ npx playwright install chromium
 npm run test:e2e
 npm run test:performance
 ```
+
+The full audit currently reports 17 known high advisories in pinned development tooling. The baseline checker still runs the full audit and fails on any new high or critical advisory; the production dependency audit must report zero. See the [deployment audit](docs/audit/final-deployment-audit.md) for the remaining toolchain risk.
 
 Integration and E2E checks require the isolated local test database described above. E2E serves production builds on ports 4300/4301 with its test API on 3433. Domain and API coverage thresholds are 80% statements/functions/lines and 70% branches. See the [28 September audit](docs/audit/final-audit.md) for current measured coverage, tested workflows, and limitations. The performance command uses disposable fixtures in the local test database and must run after a build, separately from integration tests.
 
