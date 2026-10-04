@@ -441,16 +441,46 @@ test('administration remains accessible on mobile and desktop', async ({ page })
       }
       await expect(page.locator('lq-skeleton')).toHaveCount(0);
       if (
-        mode === 'dark' &&
-        ['content/rewards', 'content/achievements', 'content/announcements'].includes(route)
+        [
+          'quests',
+          'content/rewards',
+          'content/achievements',
+          'content/help',
+          'content/announcements',
+        ].includes(route)
       ) {
-        await page.getByRole('button', { name: 'إنشاء جديد' }).click();
+        const createName =
+          route === 'quests'
+            ? mode === 'dark'
+              ? 'قالب جديد'
+              : 'New template'
+            : mode === 'dark'
+              ? 'إنشاء جديد'
+              : 'Create new';
+        await page.getByRole('button', { name: createName, exact: true }).first().click();
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible();
-        const bounds = await dialog.boundingBox();
-        if (!bounds || bounds.x < -1 || bounds.x + bounds.width > 321)
-          findings.push({ route, mode, rule: 'dialog-overflow', bounds });
-        await page.getByRole('button', { name: 'إغلاق' }).click();
+        for (const width of [320, 360]) {
+          await page.setViewportSize({ width, height: 900 });
+          const layout = await dialog.evaluate((element) => {
+            const bounds = element.getBoundingClientRect();
+            return {
+              left: bounds.left,
+              right: bounds.right,
+              contentOverflow: element.scrollWidth > element.clientWidth + 1,
+              pageOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+            };
+          });
+          if (
+            layout.left < -1 ||
+            layout.right > width + 1 ||
+            layout.contentOverflow ||
+            layout.pageOverflow
+          )
+            findings.push({ route, mode, width, rule: 'dialog-overflow', layout });
+        }
+        await page.setViewportSize({ width: mode === 'dark' ? 320 : 1440, height: 900 });
+        await page.getByRole('button', { name: mode === 'dark' ? 'إغلاق' : 'Close' }).click();
       }
       if (
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))

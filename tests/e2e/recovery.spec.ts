@@ -31,11 +31,27 @@ test('Habit Lab preserves unsaved learning and applies a gentler custom schedule
   await page.getByRole('button', { name: 'Mon', exact: true }).click();
   await page.getByRole('button', { name: 'Fri', exact: true }).click();
   await page.locator('#lab-commitment').selectOption('flexible');
+  await expect(save).toBeEnabled();
+  await page
+    .locator('p-dialog')
+    .first()
+    .evaluate(async (dialog) => {
+      await Promise.all(
+        dialog
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => {})),
+      );
+    });
   const a11y = await new AxeBuilder({ page })
     .include('p-dialog')
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze();
-  expect(a11y.violations.map((item) => item.id)).toEqual([]);
+  expect(
+    a11y.violations.map((item) => ({
+      id: item.id,
+      nodes: item.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })),
+    })),
+  ).toEqual([]);
   await save.click();
   await expect(page.locator('p-dialog [role=dialog]')).toHaveCount(0);
   await page.reload();
