@@ -1,17 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { Api, Page } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { AccessibleTable, ErrorState, Icon, PageHeader, Pagination, Skeleton } from '@lifequest/ui';
 import { AdminUser } from '../../models';
 @Component({
   selector: 'lq-admin-users',
   imports: [
     RouterLink,
-    DatePipe,
+    LocalizedDatePipe,
     FormsModule,
     TableModule,
     AccessibleTable,

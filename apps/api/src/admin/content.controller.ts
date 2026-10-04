@@ -1,6 +1,6 @@
 import { Body, Controller, Inject, Param, Patch, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { InputOf, patchSchema, rewardSchema } from '@lifequest/contracts';
+import { InputOf, patchSchema, rewardSchema, rewardUpdateSchema } from '@lifequest/contracts';
 import { Database } from '../common/database';
 import { CurrentUser, Identity, Roles, Validate } from '../common/http';
 const articleSchema = z
@@ -25,6 +25,7 @@ const achievementSchema = z
     title: z.string().min(2).max(160),
     titleAr: z.string().min(2).max(160),
     description: z.string().max(4000),
+    descriptionAr: z.string().max(4000).default(''),
     icon: z.string().max(40),
     condition: z.enum([
       'HABIT_COUNT',
@@ -42,7 +43,9 @@ const achievementSchema = z
 const announcementSchema = z
   .object({
     title: z.string().min(2).max(160),
+    titleAr: z.string().max(160).default(''),
     body: z.string().min(2).max(4000),
+    bodyAr: z.string().max(4000).default(''),
     active: z.boolean().default(true),
   })
   .strict();
@@ -65,8 +68,8 @@ export class ContentController {
   @Patch('rewards/:id') updateReward(
     @CurrentUser() user: Identity,
     @Param('id') id: string,
-    @Body(new Validate(patchSchema(rewardSchema).extend({ active: z.boolean().optional() })))
-    input: Partial<InputOf<typeof rewardSchema>> & { active?: boolean },
+    @Body(new Validate(rewardUpdateSchema))
+    input: InputOf<typeof rewardUpdateSchema>,
   ) {
     return this.db.staffAtomic(user.id, ['SUPER_ADMIN', 'ADMIN', 'CONTENT_MANAGER'], async (tx) => {
       const item = await tx.reward.update({ where: { id, userId: null }, data: input });

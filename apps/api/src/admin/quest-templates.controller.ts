@@ -52,12 +52,16 @@ export class QuestTemplatesController {
       ['SUPER_ADMIN', 'ADMIN', 'CONTENT_MANAGER'],
       async (tx) => {
         await assertReferences(tx, actor.id, { areaId: input.areaId });
-        const { items, ...fields } = input;
+        const { items, itemsAr, ...fields } = input;
         const data = {
           ...fields,
           items: {
             ...(id ? { deleteMany: {} } : {}),
-            create: items.map((title, sortOrder) => ({ title, sortOrder })),
+            create: items.map((title, sortOrder) => ({
+              title,
+              titleAr: itemsAr?.[sortOrder] ?? '',
+              sortOrder,
+            })),
           },
         };
         const template = id

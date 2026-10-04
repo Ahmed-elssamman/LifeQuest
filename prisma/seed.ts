@@ -54,13 +54,26 @@ export async function seed(database = db) {
       title: 'A week of small wins',
       titleAr: 'أسبوع من الإنجازات الصغيرة',
       description: 'Choose one direction, make a little progress, and notice what helped.',
+      descriptionAr: 'اختر اتجاهاً واحداً، وتقدم فيه قليلاً، ولاحظ ما ساعدك.',
       areaId: 'area-growth',
       difficulty: 'EASY',
       items: {
         create: [
-          { title: 'Choose one meaningful priority', sortOrder: 0 },
-          { title: 'Spend twenty minutes on the next step', sortOrder: 1 },
-          { title: 'Write down one thing that helped', sortOrder: 2 },
+          {
+            title: 'Choose one meaningful priority',
+            titleAr: 'اختر أولوية واحدة ذات معنى',
+            sortOrder: 0,
+          },
+          {
+            title: 'Spend twenty minutes on the next step',
+            titleAr: 'خصص عشرين دقيقة للخطوة التالية',
+            sortOrder: 1,
+          },
+          {
+            title: 'Write down one thing that helped',
+            titleAr: 'اكتب شيئاً واحداً ساعدك',
+            sortOrder: 2,
+          },
         ],
       },
     },
@@ -82,6 +95,7 @@ export async function seed(database = db) {
       title: 'Seven steady days',
       titleAr: 'سبعة أيام ثابتة',
       description: 'Show up for a daily habit seven days in a row. Minimum actions count.',
+      descriptionAr: 'مارس عادة يومية سبعة أيام متتالية. تُحسب الخطوات الصغيرة أيضاً.',
       icon: 'flame',
       condition: 'STREAK_DAYS',
       threshold: 7,
@@ -94,6 +108,7 @@ export async function seed(database = db) {
       title: 'The first step',
       titleAr: 'الخطوة الأولى',
       description: 'Complete your first habit. This is where change begins.',
+      descriptionAr: 'أكمل عادتك الأولى. هنا تبدأ رحلتك نحو التغيير.',
       icon: 'footprints',
       condition: 'HABIT_COUNT',
       threshold: 1,
@@ -105,6 +120,7 @@ export async function seed(database = db) {
       title: 'Finding your rhythm',
       titleAr: 'إيقاعك الخاص',
       description: 'Show up for 25 habit actions.',
+      descriptionAr: 'أكمل ٢٥ خطوة في عاداتك.',
       icon: 'flame',
       condition: 'HABIT_COUNT',
       threshold: 25,
@@ -116,6 +132,7 @@ export async function seed(database = db) {
       title: 'Quietly unstoppable',
       titleAr: 'تقدم ثابت',
       description: 'Take 100 small steps toward a better life.',
+      descriptionAr: 'اتخذ ١٠٠ خطوة صغيرة نحو حياة أفضل.',
       icon: 'mountain',
       condition: 'HABIT_COUNT',
       threshold: 100,
@@ -127,6 +144,7 @@ export async function seed(database = db) {
       title: 'A moment for yourself',
       titleAr: 'لحظة لنفسك',
       description: 'Complete seven daily reflections.',
+      descriptionAr: 'أكمل سبعة تأملات يومية.',
       icon: 'sun',
       condition: 'CHECK_IN_COUNT',
       threshold: 7,
@@ -138,6 +156,7 @@ export async function seed(database = db) {
       title: 'Mission accomplished',
       titleAr: 'المهمة تمت',
       description: 'Finish your first weekly quest.',
+      descriptionAr: 'أكمل مهمتك الأسبوعية الأولى.',
       icon: 'flag',
       condition: 'QUEST_COUNT',
       threshold: 1,
@@ -149,6 +168,7 @@ export async function seed(database = db) {
       title: 'Better together',
       titleAr: 'معاً أفضل',
       description: 'Complete a challenge with a friend.',
+      descriptionAr: 'أكمل تحدياً مع صديق.',
       icon: 'users',
       condition: 'CHALLENGE_COUNT',
       threshold: 1,
@@ -165,34 +185,46 @@ export async function seed(database = db) {
     {
       id: 'reward-coffee',
       title: 'A slow coffee morning',
+      titleAr: 'صباح قهوة هادئ',
       description: 'Your favorite café. A good book. No rush.',
+      descriptionAr: 'مقهاك المفضل، وكتاب جيد، ووقت بلا عجلة.',
       cost: 150,
       icon: 'coffee',
       category: 'Little joys',
+      categoryAr: 'متع صغيرة',
     },
     {
       id: 'reward-movie',
       title: 'Movie night, guilt free',
+      titleAr: 'ليلة فيلم بلا شعور بالذنب',
       description: 'Pick something you love and settle in.',
+      descriptionAr: 'اختر ما تحب، واستمتع بوقت هادئ.',
       cost: 300,
       icon: 'clapperboard',
       category: 'Recharge',
+      categoryAr: 'استراحة',
     },
     {
       id: 'reward-book',
       title: 'That book on your list',
+      titleAr: 'ذلك الكتاب في قائمتك',
       description: 'A new world, waiting on your bookshelf.',
+      descriptionAr: 'عالم جديد ينتظرك على رف كتبك.',
       cost: 500,
       icon: 'book-open',
       category: 'Growth',
+      categoryAr: 'نمو',
     },
     {
       id: 'reward-day',
       title: 'A day just for you',
+      titleAr: 'يوم لك وحدك',
       description: 'Clear your calendar. Follow your curiosity.',
+      descriptionAr: 'اترك جدولك خالياً واتبع فضولك.',
       cost: 1000,
       icon: 'sun',
       category: 'Experiences',
+      categoryAr: 'تجارب',
     },
   ];
   for (const reward of rewards)
@@ -213,30 +245,35 @@ export async function seed(database = db) {
       title: 'Launch',
       titleAr: 'الانطلاق',
       description: 'Make room for a new beginning.',
+      descriptionAr: 'افسح مجالاً لبداية جديدة.',
     },
     {
       month: 9,
       title: 'Consistency',
       titleAr: 'الاستمرارية',
       description: 'Find a rhythm that feels like you.',
+      descriptionAr: 'ابحث عن إيقاع يناسبك.',
     },
     {
       month: 10,
       title: 'Development',
       titleAr: 'التطوير',
       description: 'Go a little deeper. Learn something new.',
+      descriptionAr: 'تعمق قليلاً وتعلم شيئاً جديداً.',
     },
     {
       month: 11,
       title: 'Challenge',
       titleAr: 'التحدي',
       description: 'Discover what you can do together.',
+      descriptionAr: 'اكتشف ما يمكنك إنجازه مع الآخرين.',
     },
     {
       month: 12,
       title: 'Harvest',
       titleAr: 'الحصاد',
       description: 'Look back, celebrate, and carry the learning forward.',
+      descriptionAr: 'تأمل رحلتك، واحتفل، واحمل ما تعلمته إلى الأمام.',
     },
   ];
   for (const phase of phases)
@@ -292,7 +329,7 @@ export async function seed(database = db) {
     await makeUser(
       process.env['DEMO_ADMIN_EMAIL'],
       process.env['DEMO_ADMIN_PASSWORD'],
-      'LifeQuest Admin',
+      'MIRHAL Admin',
       'SUPER_ADMIN',
     );
   if (!process.env['DEMO_EMAIL'] || !process.env['DEMO_PASSWORD']) return;
@@ -618,9 +655,7 @@ export async function seed(database = db) {
 if (process.env['VITEST'] !== 'true')
   seed()
     .then(() =>
-      console.log(
-        'LifeQuest reference and demo data are ready. Account credentials remain in .env.',
-      ),
+      console.log('MIRHAL reference and demo data are ready. Account credentials remain in .env.'),
     )
     .catch(() => {
       console.error('Seed failed. Check database connectivity and migration status.');

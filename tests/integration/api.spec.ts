@@ -1,12 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NestFactory } from '@nestjs/core';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ServiceUnavailableException } from '@nestjs/common';
 import request from 'supertest';
 import { execFileSync } from 'node:child_process';
 import { AppModule } from '../../apps/api/src/app.module';
 import { configureApp } from '../../apps/api/src/bootstrap';
 import { Database } from '../../apps/api/src/common/database';
 import { MailAdapter } from '../../apps/api/src/auth/mail.adapter';
+import { AuthService } from '../../apps/api/src/auth/auth.service';
+import { cleanupExpiredRecords } from '../../apps/api/src/common/maintenance.controller';
 import { ChallengeLifecycleService } from '../../apps/api/src/social/challenge-lifecycle.service';
 import { seed } from '../../prisma/seed';
 let app: INestApplication;
@@ -34,7 +36,9 @@ beforeAll(async () => {
     env: process.env,
     stdio: 'pipe',
   });
-  app = configureApp(await NestFactory.create(AppModule, { logger: false, bodyParser: false }));
+  app = configureApp(
+    await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
+  );
   await app.init();
   db = app.get(Database);
   const tables = await db.$queryRaw<
@@ -47,7 +51,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
 });
-describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
+describe('MIRHAL HTTP workflows on migrated isolated PostgreSQL', () => {
   it('exposes health, protects private routes, and rejects cross-origin writes', async () => {
     expect((await http().get('/api/health')).status).toBe(200);
     expect((await http().get('/api/goals')).status).toBe(401);
@@ -61,6 +65,7 @@ describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
     userId = response.body.user.id;
     const mail = app.get(MailAdapter).outbox.find((item) => item.to === body.email)!;
+    expect(mail.language).toBe('ar');
     const token = new URL(mail.url).searchParams.get('token');
     expect(
       (await http().post('/api/auth/verify-email').set('Origin', origin).send({ token })).status,
@@ -68,6 +73,56 @@ describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(
       (await http().post('/api/auth/verify-email').set('Origin', origin).send({ token })).status,
     ).toBe(400);
+  });
+  it('uses persisted English for recovery mail without exposing account existence on delivery failure', async () => {
+    await db.profile.update({ where: { userId }, data: { language: 'en' } });
+    const delivered = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: body.email });
+    expect(delivered.status).toBe(201);
+    expect(app.get(MailAdapter).outbox.at(-1)?.language).toBe('en');
+    const adapter = app.get(MailAdapter);
+    const failing = vi.spyOn(adapter, 'send').mockRejectedValue(new ServiceUnavailableException());
+    const known = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: body.email });
+    const unknown = await http()
+      .post('/api/auth/forgot-password')
+      .set('Origin', origin)
+      .send({ email: 'missing@example.test' });
+    expect(known.status).toBe(unknown.status);
+    expect(known.body).toEqual(unknown.body);
+    failing.mockRestore();
+  });
+  it('limits recovery email sends per account across concurrent callers', async () => {
+    const recent = await db.authToken.count({
+      where: {
+        userId,
+        purpose: 'RESET_PASSWORD',
+        createdAt: { gte: new Date(Date.now() - 60 * 60_000) },
+      },
+    });
+    const remaining = Math.max(0, 5 - recent);
+    const adapter = app.get(MailAdapter);
+    const before = adapter.outbox.length;
+    const results = await Promise.all(
+      Array.from({ length: remaining + 3 }, () =>
+        app.get(AuthService).issueEmailToken(userId, body.email, 'RESET_PASSWORD'),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(remaining);
+    expect(adapter.outbox.length - before).toBe(remaining);
+    expect(
+      await db.authToken.count({
+        where: {
+          userId,
+          purpose: 'RESET_PASSWORD',
+          createdAt: { gte: new Date(Date.now() - 60 * 60_000) },
+        },
+      }),
+    ).toBe(5);
   });
   it('rejects invalid credentials and privilege escalation', async () => {
     expect(
@@ -160,6 +215,14 @@ describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
     expect(results.reduce((sum, r) => sum + r.body.awarded, 0)).toBe(20);
     expect(await db.habitLog.count({ where: { habitId } })).toBe(1);
     expect(await db.xPTransaction.count({ where: { source: habitId } })).toBe(1);
+    await db.habit.update({
+      where: { id: habitId },
+      data: { startDate: new Date(Date.now() - 10 * 86400000) },
+    });
+    const listed = await http().get('/api/habits').set('Cookie', cookie);
+    expect(
+      listed.body.items.find((item: { id: string }) => item.id === habitId)?.recoveryPattern,
+    ).toBe(true);
   });
   it('records learning in Habit Lab and distinct daily check-ins', async () => {
     expect(
@@ -283,6 +346,107 @@ describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
     expect((await http().get('/api/habits').set('Cookie', secondCookie)).body.items).toHaveLength(
       0,
     );
+  });
+  it('keeps reward preferences and feedback owned, and clears feedback on refund', async () => {
+    const created = await http()
+      .post('/api/rewards')
+      .set('Origin', origin)
+      .set('Cookie', cookie)
+      .send({ title: 'Weekend book', cost: 50, category: 'books', cooldownDays: 2 });
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+    expect(
+      (
+        await http()
+          .patch(`/api/rewards/${id}`)
+          .set('Origin', origin)
+          .set('Cookie', secondCookie)
+          .send({ title: 'Stolen reward' })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await http()
+          .put(`/api/rewards/${id}/favorite`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({})
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await http()
+          .put(`/api/rewards/${id}/save`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({ targetXp: 200 })
+      ).status,
+    ).toBe(200);
+    expect(
+      (await http().get('/api/reward-savings').set('Cookie', secondCookie)).body.items,
+    ).toHaveLength(0);
+    const savings = (await http().get('/api/reward-savings').set('Cookie', cookie)).body.items;
+    expect(savings.find((item: { rewardId: string }) => item.rewardId === id)?.targetXp).toBe(200);
+    const recommendations = await http().get('/api/reward-recommendations').set('Cookie', cookie);
+    expect(recommendations.status).toBe(200);
+    expect(
+      recommendations.body.some((item: { reward: { id: string } }) => item.reward.id === id),
+    ).toBe(true);
+    const redeemed = await http()
+      .post(`/api/rewards/${id}/redeem`)
+      .set('Origin', origin)
+      .set('Cookie', cookie)
+      .send({ idempotencyKey: crypto.randomUUID() });
+    expect(redeemed.status).toBe(201);
+    expect(
+      (
+        await http()
+          .post(`/api/rewards/${id}/redeem`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({ idempotencyKey: crypto.randomUUID() })
+      ).status,
+    ).toBe(400);
+    const redemptionId = redeemed.body.redemption.id;
+    expect(
+      (
+        await http()
+          .put(`/api/redemptions/${redemptionId}/feedback`)
+          .set('Origin', origin)
+          .set('Cookie', secondCookie)
+          .send({ rating: 5 })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await http()
+          .put(`/api/redemptions/${redemptionId}/feedback`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({ rating: 5 })
+      ).body.rating,
+    ).toBe(5);
+    expect(
+      (
+        await http()
+          .post(`/api/redemptions/${redemptionId}/refund`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({})
+      ).status,
+    ).toBe(201);
+    expect(
+      (await db.rewardRedemption.findUniqueOrThrow({ where: { id: redemptionId } })).rating,
+    ).toBeNull();
+    expect(
+      (
+        await http()
+          .put(`/api/redemptions/${redemptionId}/feedback`)
+          .set('Origin', origin)
+          .set('Cookie', cookie)
+          .send({ rating: 5 })
+      ).status,
+    ).toBe(400);
   });
   it('accepts private friends and creates a challenge without exposing journals', async () => {
     const friendship = await http()
@@ -543,6 +707,34 @@ describe('LifeQuest HTTP workflows on migrated isolated PostgreSQL', () => {
     );
     expect(results.map((result) => result.status).sort()).toEqual([201, 400]);
     expect((await http().get('/api/xp').set('Cookie', cookie)).body.balance).toBe(0);
+  });
+  it('prunes expired maintenance records while preserving live rate limits', async () => {
+    const expired = new Date(Date.now() - 60_000);
+    const future = new Date(Date.now() + 60_000);
+    const expiredKey = crypto.randomUUID();
+    const liveKey = crypto.randomUUID();
+    await db.rateLimitBucket.createMany({
+      data: [
+        { key: expiredKey, hits: 1, expiresAt: expired },
+        { key: liveKey, hits: 1, expiresAt: future },
+      ],
+    });
+    const token = await db.authToken.create({
+      data: {
+        userId,
+        purpose: 'VERIFY_EMAIL',
+        tokenHash: crypto.randomUUID(),
+        expiresAt: expired,
+      },
+    });
+    const session = await db.session.create({
+      data: { userId, tokenHash: crypto.randomUUID(), expiresAt: expired },
+    });
+    await cleanupExpiredRecords(db);
+    expect(await db.rateLimitBucket.findUnique({ where: { key: expiredKey } })).toBeNull();
+    expect(await db.rateLimitBucket.findUnique({ where: { key: liveKey } })).not.toBeNull();
+    expect(await db.authToken.findUnique({ where: { id: token.id } })).toBeNull();
+    expect(await db.session.findUnique({ where: { id: session.id } })).toBeNull();
   });
   it('logs out and invalidates the session', async () => {
     expect(

@@ -11,13 +11,13 @@
     <lq-icon name="plus" [size]="17" />{{ i18n.t('New quest', 'مهمة أسبوعية جديدة') }}
   </button></lq-page-header
 >
-@if (templates.data()?.length) {
+@if (visibleTemplates().length) {
   <details class="card mb-6 p-5">
     <summary class="min-h-10 cursor-pointer text-sm font-semibold">
       {{ i18n.t('A little inspiration for this week', 'قليل من الإلهام لهذا الأسبوع') }}
     </summary>
     <div class="mt-3 grid gap-3 sm:grid-cols-2">
-      @for (template of templates.data(); track template.id) {
+      @for (template of visibleTemplates(); track template.id) {
         <button
           class="rounded-xl border border-line p-4 text-start hover:bg-brand-soft"
           (click)="useTemplate(template)"
@@ -25,7 +25,9 @@
           <span class="block text-sm font-semibold">{{
             i18n.t(template.title, template.titleAr)
           }}</span
-          ><span class="mt-2 block text-xs leading-6 text-muted">{{ template.description }}</span>
+          ><span class="mt-2 block text-xs leading-6 text-muted">{{
+            i18n.t(template.description, template.descriptionAr)
+          }}</span>
         </button>
       }
     </div>

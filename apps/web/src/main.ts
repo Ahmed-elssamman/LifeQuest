@@ -6,7 +6,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { App } from './app/app';
 import { routes } from './app/app.routes';
 import { sharedConfig } from '../../../libs/config/src/app-providers';
-export const webConfig = mergeApplicationConfig(sharedConfig, {
+export const webConfig = mergeApplicationConfig(sharedConfig(), {
   providers: [
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
@@ -18,7 +18,7 @@ export const webConfig = mergeApplicationConfig(sharedConfig, {
 });
 bootstrapApplication(App, webConfig).catch((error) =>
   console.error(
-    'LifeQuest could not start.',
+    'MIRHAL could not start.',
     error instanceof Error ? error.message : 'Unknown startup error',
   ),
 );

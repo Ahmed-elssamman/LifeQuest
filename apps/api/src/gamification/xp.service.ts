@@ -93,7 +93,9 @@ export class XpService {
           body: achievement.description,
           arabic: {
             title: achievement.titleAr,
-            body: 'إنجاز جديد يقدّر تقدمك. شاهد تفاصيله في صفحة الإنجازات.',
+            body:
+              achievement.descriptionAr ||
+              'إنجاز جديد يقدّر تقدمك. شاهد تفاصيله في صفحة الإنجازات.',
           },
           href: '/achievements',
         },

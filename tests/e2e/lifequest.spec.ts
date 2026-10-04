@@ -1,25 +1,40 @@
-import { credentials, login, appearance } from './helpers';
+import { credentials, login, appearance, inspectLayout } from './helpers';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+import { z } from 'zod';
 test('register, onboard, create linked work, build a habit, reflect, earn and redeem XP', async ({
   page,
 }) => {
   const email = 'new-' + randomBytes(6).toString('hex') + '@e2e.test';
   const password = randomBytes(18).toString('base64url');
+  // The backend failure case is covered against PostgreSQL; exercise its UI notice here.
+  await page.route('**/api/auth/register', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      json: { ...(await response.json()), verificationEmail: 'unavailable' },
+    });
+  });
   await page.goto('/auth/register');
   await page.locator('#displayName').fill('New Explorer');
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(password);
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL(/onboarding$/);
-  for (let step = 0; step < 6; step++) {
-    if (step === 1) await page.getByRole('button', { name: 'Growth', exact: true }).click();
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  }
+  await expect(
+    page.getByText('Verification email could not be sent. You can resend it from Settings.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Growth', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Skip for now' }).click();
   await page.getByRole('button', { name: 'Begin my journey' }).click();
-  await expect(page).toHaveURL(/dashboard$/);
+  await expect(page).toHaveURL(/today$/);
+  await expect(
+    page.getByText('Verification email could not be sent. You can resend it from Settings.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Dismiss' }).click();
   await page.goto('/goals');
   await page.getByRole('button', { name: 'New goal', exact: true }).click();
   await page.locator('#goal-title').fill('Build my portfolio');
@@ -75,16 +90,22 @@ test('register, onboard, create linked work, build a habit, reflect, earn and re
   await page.locator('#reward-title').fill('A quiet coffee');
   await page.locator('#reward-cost').fill('50');
   await page.locator('p-dialog button[type=submit]').click();
-  await page
-    .locator('article')
-    .filter({ hasText: 'A quiet coffee' })
-    .getByRole('button', { name: 'Enjoy this reward', exact: true })
-    .click();
+  const rewardCard = page.locator('article').filter({ hasText: 'A quiet coffee' });
+  await rewardCard.getByRole('button', { name: '☆ Favorite' }).click();
+  await expect(rewardCard.getByRole('button', { name: '★ Favorite' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await rewardCard.getByRole('button', { name: 'Save for this' }).click();
+  await expect(page.getByRole('heading', { name: 'Saving for something' })).toBeVisible();
+  await rewardCard.getByRole('button', { name: 'Enjoy this reward', exact: true }).click();
   await page
     .getByRole('alertdialog', { name: 'You’ve earned a little joy.' })
     .getByRole('button', { name: 'Enjoy this reward', exact: true })
     .click();
   await expect(page.getByText('A quiet coffee').last()).toBeVisible();
+  await page.getByLabel('How was it?').selectOption('5');
+  await expect(page.getByLabel('How was it?')).toHaveValue('5');
   await page.goto('/feedback');
   await page.locator('#feedback-title').fill('Make the next step clearer');
   await page
@@ -155,7 +176,7 @@ test('desktop/mobile routes remain usable, accessible and free of horizontal ove
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await login(page);
-  for (const width of [320, 360, 390, 412, 768, 1024, 1280, 1440]) {
+  for (const width of [320, 360, 390, 412, 480, 768, 1024, 1280, 1440, 1600]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['dashboard', 'today', 'habits', 'challenges', 'help']) {
       await page.goto('/' + route);
@@ -198,9 +219,21 @@ test('friends accept invitations and make server-scored challenge progress', asy
       email,
       password: randomBytes(18).toString('base64url'),
       displayName: 'Challenge partner',
+      language: 'en',
     },
   });
   expect(registration.ok()).toBe(true);
+  const areasResponse = await peer.request.get('/api/life-areas');
+  expect(areasResponse.ok()).toBe(true);
+  const [area] = z
+    .array(z.object({ id: z.string() }))
+    .min(1)
+    .parse(await areasResponse.json());
+  const onboarding = await peer.request.post('/api/onboarding', {
+    headers: { Origin: 'http://localhost:4300' },
+    data: { areaIds: [area.id] },
+  });
+  expect(onboarding.ok()).toBe(true);
   await login(page);
   await page.goto('/friends');
   await page.getByRole('button', { name: 'Add a friend', exact: true }).click();
@@ -265,13 +298,16 @@ test('staff publishes a quest template and explorers retain unsaved edits', asyn
   await page.getByRole('button', { name: 'New template', exact: true }).click();
   await page.locator('#template-title').fill(title);
   await page.locator('#template-ar').fill('أسبوع من الخطوات الهادفة');
+  await page.locator('#template-description').fill('A small step can begin a good week.');
+  await page.locator('#template-description-ar').fill('خطوة صغيرة قد تبدأ أسبوعاً جيداً.');
   await page.locator('#template-items').fill('Take one small step\nNotice what helped');
+  await page.locator('#template-items-ar').fill('اتخذ خطوة صغيرة\nلاحظ ما ساعدك');
   await page.getByRole('button', { name: 'Save template', exact: true }).click();
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
   await login(page);
   await page.goto('/quests');
   await page.locator('summary').filter({ hasText: 'A little inspiration for this week' }).click();
-  await page.getByRole('button', { name: title, exact: true }).click();
+  await page.getByRole('button', { name: new RegExp(title) }).click();
   await expect(page.locator('#quest-items')).toHaveValue('Take one small step\nNotice what helped');
   await page.locator('#quest-title').fill(title + ' adapted');
   await page.getByRole('button', { name: 'Close', exact: true }).click();
@@ -282,6 +318,14 @@ test('staff publishes a quest template and explorers retain unsaved edits', asyn
   await expect(page.locator('#quest-title')).toHaveValue(title + ' adapted');
   await page.locator('p-dialog button[type=submit]').click();
   await expect(page.getByRole('heading', { name: title + ' adapted', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to Arabic' }).click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.goto('/quests');
+  await page.locator('summary').filter({ hasText: 'قليل من الإلهام لهذا الأسبوع' }).click();
+  const arabicTemplate = page.getByRole('button', { name: /أسبوع من الخطوات الهادفة/ });
+  await expect(arabicTemplate).toContainText('خطوة صغيرة قد تبدأ أسبوعاً جيداً.');
+  await arabicTemplate.click();
+  await expect(page.locator('#quest-items')).toHaveValue('اتخذ خطوة صغيرة\nلاحظ ما ساعدك');
 });
 
 test('customer routes support Arabic dark mode, keyboard contrast and small screens', async ({
@@ -294,6 +338,9 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
     await appearance(page, mode);
     await page.setViewportSize({ width: mode === 'dark' ? 320 : 1280, height: 900 });
     for (const route of [
+      'onboarding',
+      'dashboard',
+      'today',
       'goals',
       'projects',
       'tasks',
@@ -320,10 +367,19 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
         await page.locator('html').evaluate((element) => element.classList.contains('dark')),
       ).toBe(mode === 'dark');
       await expect(page.locator('lq-skeleton')).toHaveCount(0);
+      if (mode === 'dark' && route === 'rewards')
+        await expect(page.getByRole('heading', { name: 'صباح قهوة هادئ' })).toBeVisible();
+      if (mode === 'dark' && route === 'achievements')
+        await expect(
+          page.getByText('مارس عادة يومية سبعة أيام متتالية. تُحسب الخطوات الصغيرة أيضاً.'),
+        ).toBeVisible();
+      if (mode === 'dark' && route === 'journey')
+        await expect(page.getByText('تعمق قليلاً وتعلم شيئاً جديداً.')).toBeVisible();
       if (
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )
         findings.push({ route, mode, rule: 'horizontal-overflow', targets: [] });
+      await inspectLayout(page, 'web', route, mode);
       const result = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();
@@ -349,6 +405,9 @@ test('customer routes support Arabic dark mode, keyboard contrast and small scre
 test('administration remains accessible on mobile and desktop', async ({ page }) => {
   test.setTimeout(150000);
   await login(page, true);
+  await page.goto('http://localhost:4301/users');
+  const detailPath = await page.locator('a[href^="/users/"]').first().getAttribute('href');
+  if (!detailPath) throw new Error('Admin user detail route is unavailable');
   const findings: unknown[] = [];
   for (const mode of ['light', 'dark'] as const) {
     await appearance(page, mode, true);
@@ -356,6 +415,7 @@ test('administration remains accessible on mobile and desktop', async ({ page })
     for (const route of [
       'overview',
       'users',
+      detailPath.slice(1),
       'feedback',
       'challenges',
       'analytics',
@@ -381,9 +441,60 @@ test('administration remains accessible on mobile and desktop', async ({ page })
       }
       await expect(page.locator('lq-skeleton')).toHaveCount(0);
       if (
+        [
+          'quests',
+          'content/rewards',
+          'content/achievements',
+          'content/help',
+          'content/announcements',
+        ].includes(route)
+      ) {
+        const createName =
+          route === 'quests'
+            ? mode === 'dark'
+              ? 'قالب جديد'
+              : 'New template'
+            : mode === 'dark'
+              ? 'إنشاء جديد'
+              : 'Create new';
+        await page.getByRole('button', { name: createName, exact: true }).first().click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        if (route === 'content/achievements') {
+          await expect(page.locator('#content-icon option[value="award"]')).toHaveText(
+            mode === 'dark' ? 'جائزة' : 'Award',
+          );
+          await expect(page.locator('#content-condition option[value="HABIT_COUNT"]')).toHaveText(
+            mode === 'dark' ? 'العادات المكتملة' : 'Completed habits',
+          );
+        }
+        for (const width of [320, 360]) {
+          await page.setViewportSize({ width, height: 900 });
+          const layout = await dialog.evaluate((element) => {
+            const bounds = element.getBoundingClientRect();
+            return {
+              left: bounds.left,
+              right: bounds.right,
+              contentOverflow: element.scrollWidth > element.clientWidth + 1,
+              pageOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+            };
+          });
+          if (
+            layout.left < -1 ||
+            layout.right > width + 1 ||
+            layout.contentOverflow ||
+            layout.pageOverflow
+          )
+            findings.push({ route, mode, width, rule: 'dialog-overflow', layout });
+        }
+        await page.setViewportSize({ width: mode === 'dark' ? 320 : 1440, height: 900 });
+        await page.getByRole('button', { name: mode === 'dark' ? 'إغلاق' : 'Close' }).click();
+      }
+      if (
         !(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
       )
         findings.push({ route, mode, rule: 'overflow' });
+      await inspectLayout(page, 'admin', route, mode);
       const result = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();

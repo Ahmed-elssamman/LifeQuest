@@ -1,4 +1,4 @@
-import { AttachmentStorage } from './attachment-storage';
+import { AttachmentCleanup } from './attachment-cleanup';
 import {
   BadRequestException,
   Body,
@@ -24,7 +24,7 @@ import { DashboardService } from './dashboard.service';
 export class AccountController {
   constructor(
     @Inject(Database) private readonly db: Database,
-    @Inject(AttachmentStorage) private readonly storage: AttachmentStorage,
+    @Inject(AttachmentCleanup) private readonly cleanup: AttachmentCleanup,
     @Inject(DashboardService) private readonly dashboard: DashboardService,
   ) {}
   @Public() @Get('life-areas') areas() {
@@ -219,9 +219,19 @@ export class AccountController {
       throw new BadRequestException('Your password is incorrect.');
     const files = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT c.id FROM "Challenge" c JOIN "ChallengeParticipant" p ON p."challengeId" = c.id WHERE p."userId" = ${user.id} ORDER BY c.id FOR UPDATE OF c`;
-      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+      await this.db.lockActive(tx, user.id);
+      const current = await tx.user.findUniqueOrThrow({ where: { id: user.id } });
+      if (current.passwordHash !== account.passwordHash)
+        throw new BadRequestException('Your password changed. Please sign in again.');
       await tx.session.deleteMany({ where: { userId: user.id } });
       await tx.authToken.deleteMany({ where: { userId: user.id } });
+      await tx.challenge.updateMany({
+        where: {
+          participants: { some: { userId: user.id } },
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        },
+        data: { status: 'CANCELLED' },
+      });
       await tx.user.update({
         where: { id: user.id },
         data: {
@@ -236,7 +246,7 @@ export class AccountController {
       });
       return files;
     });
-    await Promise.all(files.map((key) => this.storage.remove(key)));
+    await this.cleanup.drain(files);
     response.clearCookie('lq_session', { path: '/api' });
     return { success: true };
   }

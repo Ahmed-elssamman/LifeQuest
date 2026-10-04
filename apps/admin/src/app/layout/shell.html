@@ -29,7 +29,7 @@
   </nav>
   <div class="mt-8 border-t border-line pt-5">
     <p class="px-3 text-xs font-semibold">{{ auth.user()?.profile?.displayName }}</p>
-    <p class="mt-1 px-3 text-[9px] text-muted">{{ auth.user()?.role?.replaceAll('_', ' ') }}</p>
+    <p class="mt-1 px-3 text-[9px] text-muted">{{ i18n.label(auth.user()?.role ?? '') }}</p>
     <button class="btn btn-quiet mt-3 w-full justify-start text-xs" (click)="logout()">
       <lq-icon name="logout" [size]="16" />{{ i18n.t('Sign out', 'تسجيل الخروج') }}
     </button>

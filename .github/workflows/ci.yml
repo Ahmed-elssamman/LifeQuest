@@ -1,4 +1,4 @@
-name: Validate LifeQuest
+name: Validate MIRHAL
 on:
   push:
   pull_request:
@@ -30,6 +30,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm ls --all
+      - run: npm audit --omit=dev --audit-level=high
+      - run: node tools/check-audit-baseline.mjs
       - run: npm run db:generate
       - run: npm run format:check
       - run: npm run security:check

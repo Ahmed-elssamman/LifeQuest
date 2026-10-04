@@ -7,6 +7,13 @@ export default defineConfig({
   expect: { timeout: 10000 },
   use: {
     baseURL: 'http://localhost:4300',
+    storageState: {
+      cookies: [],
+      origins: ['http://localhost:4300', 'http://localhost:4301'].map((origin) => ({
+        origin,
+        localStorage: [{ name: 'lq-language', value: 'en' }],
+      })),
+    },
     browserName: 'chromium',
     headless: true,
     // Route fixtures must reach the API instead of a previous PWA worker.

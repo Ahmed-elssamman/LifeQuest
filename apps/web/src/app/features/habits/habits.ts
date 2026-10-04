@@ -65,7 +65,7 @@ export class HabitsPage {
     frequency: ['DAILY'],
     weeklyTarget: [3, [Validators.min(1), Validators.max(7)]],
     target: [1, [Validators.required, Validators.min(0.01)]],
-    unit: ['times', Validators.required],
+    unit: [this.i18n.habitUnit('times'), Validators.required],
     difficulty: ['EASY'],
     preferredTime: ['morning'],
     minimumAction: [''],
@@ -92,7 +92,7 @@ export class HabitsPage {
       frequency: 'DAILY',
       weeklyTarget: 3,
       target: 1,
-      unit: 'times',
+      unit: this.i18n.habitUnit('times'),
       difficulty: 'EASY',
       preferredTime: 'morning',
     });
@@ -103,6 +103,7 @@ export class HabitsPage {
     this.editing.set(habit);
     this.form.reset({
       ...habit,
+      unit: this.i18n.habitUnit(habit.unit),
       goalId: habit.goalId ?? '',
       startDate: habit.startDate.slice(0, 10),
     });

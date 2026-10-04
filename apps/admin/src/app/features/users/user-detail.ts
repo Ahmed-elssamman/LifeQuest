@@ -1,15 +1,25 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DatePipe, KeyValuePipe } from '@angular/common';
+import { KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { Api, Toasts } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { ErrorState, Icon, PageHeader, Skeleton } from '@lifequest/ui';
 import { AdminUser } from '../../models';
+const countLabels: Record<string, [string, string]> = {
+  goals: ['Goals', 'الأهداف'],
+  projects: ['Projects', 'المشاريع'],
+  tasks: ['Tasks', 'المهام'],
+  habits: ['Habits', 'العادات'],
+  habitLogs: ['Habit logs', 'سجلات العادات'],
+  checkIns: ['Check-ins', 'المراجعات اليومية'],
+  participations: ['Challenges', 'التحديات'],
+  redemptions: ['Reward redemptions', 'استبدالات المكافآت'],
+};
 @Component({
   selector: 'lq-admin-user-detail',
-  imports: [RouterLink, DatePipe, KeyValuePipe, PageHeader, ErrorState, Skeleton, Icon],
+  imports: [RouterLink, LocalizedDatePipe, KeyValuePipe, PageHeader, ErrorState, Skeleton, Icon],
   template: `<lq-page-header
       [eyebrow]="i18n.t('PRIVACY-RESPECTING SUPPORT', 'دعم يحترم الخصوصية')"
       [title]="
@@ -64,7 +74,7 @@ import { AdminUser } from '../../models';
             (change)="changeRole(user, role.value)"
           >
             @for (item of roles; track item) {
-              <option [value]="item">{{ item.replaceAll('_', ' ') }}</option>
+              <option [value]="item">{{ i18n.label(item) }}</option>
             }
           </select>
         }
@@ -72,7 +82,7 @@ import { AdminUser } from '../../models';
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @for (item of user._count | keyvalue; track item.key) {
           <div class="card p-5">
-            <p class="eyebrow">{{ item.key }}</p>
+            <p class="eyebrow">{{ countLabel(item.key) }}</p>
             <p class="mt-3 text-3xl font-semibold">{{ item.value }}</p>
           </div>
         }
@@ -99,6 +109,10 @@ export class AdminUserDetailPage {
     'CONTENT_MANAGER',
     'ANALYST',
   ];
+  countLabel(key: string) {
+    const label = countLabels[key];
+    return label ? this.i18n.t(...label) : key;
+  }
   changeStatus(user: AdminUser) {
     this.confirm.confirm({
       header: this.i18n.t('Update account access', 'تحديث وصول الحساب'),
@@ -114,8 +128,8 @@ export class AdminUserDetailPage {
     this.confirm.confirm({
       header: this.i18n.t('Change account role', 'تغيير دور الحساب'),
       message: this.i18n.t(
-        `Assign ${role.replaceAll('_', ' ')} access? This changes permissions.`,
-        `تعيين صلاحية ${role}؟ سيغير هذا الأذونات.`,
+        `Assign ${this.i18n.label(role)} access? This changes permissions.`,
+        `تعيين صلاحية ${this.i18n.label(role)}؟ سيغير هذا الأذونات.`,
       ),
       accept: () => void this.update(user.id, { role }),
     });

@@ -19,7 +19,10 @@ describe('Creation while reference data is still loading', () => {
         provideHttpClientTesting(),
         { provide: Toasts, useValue: { error } },
         { provide: DiscardChanges, useValue: {} },
-        { provide: Preferences, useValue: { t: (english: string) => english } },
+        {
+          provide: Preferences,
+          useValue: { t: (english: string) => english, habitUnit: (value: string) => value },
+        },
       ],
     });
   });

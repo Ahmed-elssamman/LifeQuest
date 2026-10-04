@@ -3,9 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { Request, Response, Express } from 'express';
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
+import { validateStartupEnvironment } from './common/startup';
 
 let application: Promise<Express> | undefined;
 async function initialize() {
+  validateStartupEnvironment();
   const app = configureApp(
     await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
   );
@@ -24,7 +26,7 @@ export default async function handler(request: Request, response: Response) {
     console.error(JSON.stringify({ level: 'error', code: 'SERVERLESS_STARTUP_FAILED' }));
     response.status(503).json({
       code: 'SERVICE_UNAVAILABLE',
-      message: 'LifeQuest is temporarily unavailable. Please try again shortly.',
+      message: 'MIRHAL is temporarily unavailable. Please try again shortly.',
       timestamp: new Date().toISOString(),
     });
   }
