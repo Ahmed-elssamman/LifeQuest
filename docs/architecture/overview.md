@@ -1,6 +1,6 @@
 # Architecture
 
-LifeQuest is a modular monolith in an Nx npm workspace. Customer and administration bundles are separate Angular applications. They share reusable UI, form, authentication, preference and HTTP primitives; operational code is not imported by the customer app.
+MIRHAL is a modular monolith in an Nx npm workspace. Customer and administration bundles are separate Angular applications. They share reusable UI, form, authentication, preference and HTTP primitives; operational code is not imported by the customer app.
 
 The NestJS API owns authorization and domain writes. Prisma is the schema source of truth. PostgreSQL foreign keys, unique constraints, checks and triggers reinforce application validation. Neon credentials remain on the server.
 
@@ -21,3 +21,5 @@ Backend domains: identity, account/planning, habits/reflection/quests, gamificat
 Sensitive operations lock rows in a documented order. Habit/task/quest/reward operations lock the user before changing XP. Challenge activation/finalization locks the challenge, then participating users in sorted order. Account erasure takes challenge locks before its user lock. Do not introduce a reverse lock order.
 
 See the individual frontend/backend/database/testing documents for extension points and constraints. The implementation record tracks unfinished acceptance work rather than treating a passing build as completion.
+
+Future personal health integration boundaries are documented in [health-integrations.md](health-integrations.md); no provider code or health schema is active.

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -175,6 +175,8 @@ model User {
   achievements        UserAchievement[]
   rewards             Reward[]
   redemptions         RewardRedemption[]
+  rewardFavorites     RewardFavorite[]
+  rewardSavings       RewardSavingsTarget[]
   friendshipsSent     Friendship[]           @relation("FriendshipSender")
   friendshipsReceived Friendship[]           @relation("FriendshipReceiver")
   challenges          Challenge[]
@@ -197,7 +199,7 @@ model Profile {
   bio                   String     @default("")
   avatarUrl             String?
   timezone              String     @default("Africa/Cairo")
-  language              String     @default("en")
+  language              String     @default("ar")
   theme                 String     @default("system")
   profileVisibility     Visibility @default(PRIVATE)
   shareChallengeScore   Boolean    @default(true)
@@ -219,6 +221,7 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId, expiresAt])
+  @@index([expiresAt])
 }
 
 model AuthToken {
@@ -232,6 +235,7 @@ model AuthToken {
   createdAt DateTime     @default(now())
 
   @@index([userId, purpose])
+  @@index([expiresAt])
 }
 
 model LifeArea {
@@ -273,15 +277,16 @@ model Season {
 }
 
 model SeasonPhase {
-  id          String         @id @default(cuid())
-  seasonId    String
-  season      Season         @relation(fields: [seasonId], references: [id])
-  title       String
-  titleAr     String
-  month       Int
-  year        Int
-  description String
-  journeys    MonthJourney[]
+  id            String         @id @default(cuid())
+  seasonId      String
+  season        Season         @relation(fields: [seasonId], references: [id])
+  title         String
+  titleAr       String
+  month         Int
+  year          Int
+  description   String
+  descriptionAr String         @default("")
+  journeys      MonthJourney[]
 
   @@unique([seasonId, year, month])
 }
@@ -337,6 +342,9 @@ model Milestone {
   completed Boolean   @default(false)
   dueDate   DateTime? @db.Date
   createdAt DateTime  @default(now())
+
+  @@index([goalId])
+  @@index([projectId])
 }
 
 model Project {
@@ -387,6 +395,8 @@ model Task {
 
   @@index([userId, status, dueDate])
   @@index([projectId])
+  @@index([goalId])
+  @@index([parentId])
 }
 
 model Habit {
@@ -442,6 +452,7 @@ model HabitLog {
 
   @@unique([habitId, date])
   @@index([userId, date])
+  @@index([userId, createdAt])
 }
 
 model HabitExperiment {
@@ -559,20 +570,21 @@ model Level {
 }
 
 model Achievement {
-  id          String            @id @default(cuid())
-  slug        String            @unique
-  title       String
-  titleAr     String
-  description String
-  icon        String
-  condition   String
-  threshold   Int
-  xpReward    Int               @default(50)
-  hidden      Boolean           @default(false)
-  active      Boolean           @default(true)
-  users       UserAchievement[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id            String            @id @default(cuid())
+  slug          String            @unique
+  title         String
+  titleAr       String
+  description   String
+  descriptionAr String            @default("")
+  icon          String
+  condition     String
+  threshold     Int
+  xpReward      Int               @default(50)
+  hidden        Boolean           @default(false)
+  active        Boolean           @default(true)
+  users         UserAchievement[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model UserAchievement {
@@ -586,20 +598,27 @@ model UserAchievement {
 }
 
 model Reward {
-  id              String             @id @default(cuid())
+  id              String                @id @default(cuid())
   userId          String?
-  user            User?              @relation(fields: [userId], references: [id])
+  user            User?                 @relation(fields: [userId], references: [id])
   title           String
-  description     String             @default("")
+  titleAr         String                @default("")
+  description     String                @default("")
+  descriptionAr   String                @default("")
   cost            Int
-  active          Boolean            @default(true)
-  icon            String             @default("gift")
-  category        String             @default("personal")
+  active          Boolean               @default(true)
+  icon            String                @default("gift")
+  category        String                @default("personal")
+  categoryAr      String                @default("")
+  cooldownDays    Int                   @default(0)
+  contexts        String[]              @default([])
   redemptionLimit Int?
-  notes           String             @default("")
+  notes           String                @default("")
   redemptions     RewardRedemption[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  favorites       RewardFavorite[]
+  savingsTargets  RewardSavingsTarget[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 
   @@index([userId, active])
 }
@@ -613,8 +632,33 @@ model RewardRedemption {
   costSnapshot   Int
   idempotencyKey String    @unique
   refundedAt     DateTime?
+  rating         Int?
+  ratedAt        DateTime?
   createdAt      DateTime  @default(now())
 
+  @@index([userId, createdAt])
+}
+
+model RewardFavorite {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardId  String
+  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, rewardId])
+}
+
+model RewardSavingsTarget {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardId  String
+  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  targetXp  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, rewardId])
   @@index([userId, createdAt])
 }
 
@@ -763,6 +807,8 @@ model FeedbackReply {
   internal   Boolean  @default(false)
   authorRole Role
   createdAt  DateTime @default(now())
+
+  @@index([feedbackId, createdAt])
 }
 
 model FeedbackAttachment {
@@ -773,6 +819,16 @@ model FeedbackAttachment {
   mimeType   String
   size       Int
   storageKey String
+
+  @@index([feedbackId])
+}
+
+model AttachmentDeletion {
+  storageKey String   @id
+  createdAt  DateTime @default(now())
+  retryAt    DateTime @default(now())
+
+  @@index([retryAt, createdAt])
 }
 
 model AuditLog {
@@ -816,7 +872,9 @@ model HelpArticle {
 model Announcement {
   id        String   @id @default(cuid())
   title     String
+  titleAr   String   @default("")
   body      String
+  bodyAr    String   @default("")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -848,17 +906,18 @@ model ChallengeHabitSnapshot {
 }
 
 model QuestTemplate {
-  id          String              @id @default(cuid())
-  title       String
-  titleAr     String
-  description String              @default("")
-  areaId      String
-  area        LifeArea            @relation(fields: [areaId], references: [id])
-  difficulty  Difficulty          @default(MEDIUM)
-  active      Boolean             @default(true)
-  items       QuestTemplateItem[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id            String              @id @default(cuid())
+  title         String
+  titleAr       String
+  description   String              @default("")
+  descriptionAr String              @default("")
+  areaId        String
+  area          LifeArea            @relation(fields: [areaId], references: [id])
+  difficulty    Difficulty          @default(MEDIUM)
+  active        Boolean             @default(true)
+  items         QuestTemplateItem[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model QuestTemplateItem {
@@ -866,6 +925,7 @@ model QuestTemplateItem {
   templateId String
   template   QuestTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   title      String
+  titleAr    String        @default("")
   sortOrder  Int           @default(0)
 
   @@index([templateId])
@@ -873,9 +933,10 @@ model QuestTemplateItem {
 
 // Ephemeral hashed rate-limit counters shared by serverless instances.
 model RateLimitBucket {
-  key String @id
-  hits Int
-  expiresAt DateTime
+  key          String    @id
+  hits         Int
+  expiresAt    DateTime
   blockedUntil DateTime?
+
   @@index([expiresAt])
 }

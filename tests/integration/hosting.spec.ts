@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NestFactory } from '@nestjs/core';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ServiceUnavailableException } from '@nestjs/common';
 import request from 'supertest';
 import { execFileSync } from 'node:child_process';
 import { Request } from 'express';
@@ -17,7 +17,9 @@ beforeAll(async () => {
     env: process.env,
     stdio: 'pipe',
   });
-  app = configureApp(await NestFactory.create(AppModule, { logger: false, bodyParser: false }));
+  app = configureApp(
+    await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
+  );
   await app.init();
   db = app.get(Database);
 });
@@ -27,6 +29,38 @@ afterAll(async () => {
 });
 
 describe('Production hosting behavior', () => {
+  it('keeps a newly created account usable when verification email temporarily fails', async () => {
+    const mail = app.get(MailAdapter);
+    const send = vi
+      .spyOn(mail, 'send')
+      .mockRejectedValueOnce(new ServiceUnavailableException('Delivery failed'));
+    const email = `mail-failure-${crypto.randomUUID()}@example.test`;
+    try {
+      const registration = await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .set('Origin', 'http://localhost:4200')
+        .send({ email, password: 'isolated-test-password-long', displayName: 'Email retry' });
+      expect(registration.status).toBe(201);
+      expect(registration.body.verificationEmail).toBe('unavailable');
+      expect(registration.body.user.emailVerifiedAt).toBeNull();
+      const cookie = registration.headers['set-cookie'][0].split(';')[0];
+      expect(
+        (await request(app.getHttpServer()).get('/api/auth/me').set('Cookie', cookie)).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(app.getHttpServer())
+            .post('/api/auth/resend-verification')
+            .set('Origin', 'http://localhost:4200')
+            .set('Cookie', cookie)
+        ).status,
+      ).toBe(201);
+      expect(mail.outbox.some((item) => item.to === email)).toBe(true);
+      expect(await db.user.count({ where: { email } })).toBe(1);
+    } finally {
+      send.mockRestore();
+    }
+  });
   it('supports registration without email, leaving verification pending and no recovery promise', async () => {
     vi.stubEnv('MAIL_MODE', 'disabled');
     const http = () => request(app.getHttpServer());

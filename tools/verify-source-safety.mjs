@@ -6,12 +6,15 @@ const secrets = [
   'DATABASE_URL',
   'DIRECT_URL',
   'SMTP_PASSWORD',
+  'RESEND_API_KEY',
   'DEMO_PASSWORD',
   'DEMO_ADMIN_PASSWORD',
+  'BLOB_READ_WRITE_TOKEN',
+  'CRON_SECRET',
 ]
   .map((key) => process.env[key])
   .filter((value) => value && value.length > 10);
-const roots = ['apps', 'libs', 'prisma', 'docs', '.github'];
+const roots = ['apps', 'libs', 'prisma', 'docs', '.github', 'tools', 'tests'];
 const matches = [];
 function visit(path) {
   if (statSync(path).isDirectory()) {
@@ -24,6 +27,7 @@ function visit(path) {
 }
 for (const root of roots) visit(root);
 visit('README.md');
+for (const file of ['.env.example', 'package.json', 'render.yaml']) visit(file);
 if (matches.length) {
   console.error('Secret values detected in source files:', matches.join(', '));
   process.exitCode = 1;

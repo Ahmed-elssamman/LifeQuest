@@ -31,11 +31,27 @@ test('Habit Lab preserves unsaved learning and applies a gentler custom schedule
   await page.getByRole('button', { name: 'Mon', exact: true }).click();
   await page.getByRole('button', { name: 'Fri', exact: true }).click();
   await page.locator('#lab-commitment').selectOption('flexible');
+  await expect(save).toBeEnabled();
+  await page
+    .locator('p-dialog')
+    .first()
+    .evaluate(async (dialog) => {
+      await Promise.all(
+        dialog
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => {})),
+      );
+    });
   const a11y = await new AxeBuilder({ page })
     .include('p-dialog')
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze();
-  expect(a11y.violations.map((item) => item.id)).toEqual([]);
+  expect(
+    a11y.violations.map((item) => ({
+      id: item.id,
+      nodes: item.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })),
+    })),
+  ).toEqual([]);
   await save.click();
   await expect(page.locator('p-dialog [role=dialog]')).toHaveCount(0);
   await page.reload();
@@ -73,4 +89,27 @@ test('a temporary habits failure explains recovery and retry restores the real d
   await page.locator('lq-error').getByRole('button').click();
   await expect(page.locator('lq-error')).toHaveCount(0);
   await expect(page.locator('article').first()).toBeVisible();
+});
+
+test('repeated missed commitments offer a smaller editable experiment', async ({ page }) => {
+  await login(page);
+  const startDate = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+  const created = await page.request.post('/api/habits', {
+    headers: { Origin: 'http://localhost:4300' },
+    data: {
+      name: 'Gentle recovery example',
+      areaId: 'area-body',
+      target: 30,
+      unit: 'minutes',
+      startDate,
+    },
+  });
+  expect(created.ok()).toBe(true);
+  await page.goto('/habit-lab');
+  const habit = page.locator('article').filter({ hasText: 'Gentle recovery example' });
+  await expect(habit.getByText('Several planned days did not happen.')).toBeVisible();
+  await habit.getByRole('button', { name: 'Try a smaller experiment' }).click();
+  await expect(page.locator('#lab-target')).toHaveValue('10');
+  await expect(page.locator('#lab-reason')).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Start this experiment' })).toBeDisabled();
 });

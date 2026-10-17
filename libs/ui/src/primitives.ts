@@ -5,10 +5,12 @@ import { Icon } from './icon';
 @Component({
   selector: 'lq-logo',
   template:
-    '<span class="flex items-center gap-2.5"><svg aria-hidden="true" class="size-9 shrink-0" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#6b57cd"/><path d="M32 14c-11 0-17 7-17 18h17V14Zm4 18h14c0-11-5-18-14-18v18ZM32 36H15c0 10 7 15 17 15V36Zm4 0v15c9 0 14-6 14-15H36Z" fill="white"/></svg><span class="text-[22px] font-bold tracking-[-0.8px]">LifeQuest<span class="text-brand">.</span></span></span>',
+    '<span class="flex items-center gap-2.5"><svg aria-hidden="true" class="size-9 shrink-0" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#6b57cd"/><path d="M32 14c-11 0-17 7-17 18h17V14Zm4 18h14c0-11-5-18-14-18v18ZM32 36H15c0 10 7 15 17 15V36Zm4 0v15c9 0 14-6 14-15H36Z" fill="white"/></svg><span class="text-[22px] font-bold tracking-[-0.8px]">{{ i18n.t(\'MIRHAL\', \'مِرحال\') }}<span class="text-brand">.</span></span></span>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Logo {}
+export class Logo {
+  readonly i18n = inject(Preferences);
+}
 @Component({
   selector: 'lq-page-header',
   template:
@@ -36,7 +38,7 @@ export class EmptyState {
   selector: 'lq-error',
   imports: [Icon],
   template:
-    '<div role="alert" class="card flex flex-wrap items-center gap-4 border-rose-200 p-5"><lq-icon name="alert" /><div class="min-w-0 flex-1"><p class="font-semibold">{{ title() || i18n.t(\'A small detour\',\'عقبة صغيرة\') }}</p><p class="mt-1 text-sm text-muted">{{ message() }}</p></div><button class="btn btn-secondary" (click)="retry.emit()"><lq-icon name="refresh" [size]="16" />{{ retryLabel() || i18n.t(\'Try again\',\'حاول مجدداً\') }}</button></div>',
+    '<div role="alert" class="card flex flex-wrap items-center gap-4 border-rose-200 p-5"><lq-icon name="alert" /><div class="min-w-0 flex-1"><p class="font-semibold">{{ title() || i18n.t(\'A small detour\',\'عقبة صغيرة\') }}</p><p class="mt-1 text-sm text-muted">{{ message() }}</p></div><button type="button" class="btn btn-secondary" (click)="retry.emit()"><lq-icon name="refresh" [size]="16" />{{ retryLabel() || i18n.t(\'Try again\',\'حاول مجدداً\') }}</button></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ErrorState {
@@ -49,19 +51,22 @@ export class ErrorState {
 @Component({
   selector: 'lq-skeleton',
   template:
-    '<div aria-busy="true" aria-label="Loading" class="space-y-5"><div class="skeleton h-8 w-1/3"></div><div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@for (item of [1,2,3]; track item) { <div class="card p-6"><div class="skeleton mb-5 size-11"></div><div class="skeleton mb-3 h-5 w-3/4"></div><div class="skeleton h-3 w-1/2"></div></div> }</div><div class="skeleton h-64 w-full"></div></div>',
+    '<div aria-busy="true" [attr.aria-label]="i18n.t(\'Loading\',\'جارٍ التحميل\')" class="space-y-5"><div class="skeleton h-8 w-1/3"></div><div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@for (item of [1,2,3]; track item) { <div class="card p-6"><div class="skeleton mb-5 size-11"></div><div class="skeleton mb-3 h-5 w-3/4"></div><div class="skeleton h-3 w-1/2"></div></div> }</div><div class="skeleton h-64 w-full"></div></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Skeleton {}
+export class Skeleton {
+  readonly i18n = inject(Preferences);
+}
 @Component({
   selector: 'lq-progress',
   template:
-    '<div role="progressbar" [attr.aria-label]="label()" [attr.aria-valuenow]="rounded()" aria-valuemin="0" aria-valuemax="100" class="h-1.5 overflow-hidden rounded-full bg-line"><div class="h-full origin-left rounded-full" [class]="color()" [style.transform]="\'scaleX(\' + rounded()/100 + \')\'" style="transition: transform 450ms ease"></div></div>',
+    '<div role="progressbar" [attr.aria-label]="label() || i18n.t(\'Progress\',\'التقدم\')" [attr.aria-valuenow]="rounded()" aria-valuemin="0" aria-valuemax="100" class="h-1.5 overflow-hidden rounded-full bg-line"><div class="h-full origin-left rtl:origin-right rounded-full" [class]="color()" [style.transform]="\'scaleX(\' + rounded()/100 + \')\'" style="transition: transform 450ms ease"></div></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Progress {
+  readonly i18n = inject(Preferences);
   readonly value = input(0);
-  readonly label = input('Progress');
+  readonly label = input<string>();
   readonly color = input('bg-brand');
   rounded() {
     return Math.max(0, Math.min(100, Math.round(this.value())));
@@ -95,11 +100,12 @@ export class StatCard {
   selector: 'lq-section-title',
   imports: [RouterLink, Icon],
   template:
-    '<div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-base font-semibold tracking-tight">{{ title() }}</h2>@if (link()) { <a [routerLink]="link()" class="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-brand">{{ linkLabel() }}<lq-icon name="arrow-right" [size]="14" /></a> }<ng-content /></div>',
+    '<div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-base font-semibold tracking-tight">{{ title() }}</h2>@if (link()) { <a [routerLink]="link()" class="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-brand">{{ linkLabel() || i18n.t(\'View all\',\'عرض الكل\') }}<lq-icon name="arrow-right" [size]="14" /></a> }<ng-content /></div>',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SectionTitle {
+  readonly i18n = inject(Preferences);
   readonly title = input.required<string>();
   readonly link = input('');
-  readonly linkLabel = input('View all');
+  readonly linkLabel = input<string>();
 }

@@ -196,7 +196,7 @@ export class PlanningService {
         if (parentId === id || depth++ > 50)
           throw new BadRequestException('A task cannot be its own ancestor.');
         parentId = (
-          await tx.task.findUnique({ where: { id: parentId }, select: { parentId: true } })
+          await tx.task.findFirst({ where: { id: parentId, userId }, select: { parentId: true } })
         )?.parentId;
       }
       const updated = await tx.task.update({

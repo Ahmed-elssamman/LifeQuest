@@ -13,8 +13,6 @@ export function configureApp(app: INestApplication) {
   ];
   app.setGlobalPrefix('api');
   app.use(helmet());
-  app.use(json({ limit: '64kb' }));
-  app.use(cookieParser());
   app.enableCors({
     origin: origins,
     credentials: true,
@@ -53,12 +51,14 @@ export function configureApp(app: INestApplication) {
     });
     next();
   });
+  app.use(json({ limit: '64kb' }));
+  app.use(cookieParser());
   app.useGlobalFilters(new ApiExceptionFilter());
   if (process.env['NODE_ENV'] !== 'production') {
     const document = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('LifeQuest API')
+        .setTitle('MIRHAL API')
         .setDescription(
           'Private personal operating system. All write requests require an allowed Origin header. Authentication uses an HttpOnly session cookie. Validation errors include code, message, details, requestId and timestamp.',
         )

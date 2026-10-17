@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: mirhal-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run db:generate && npm run build:api
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: ADMIN_ORIGIN
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: MAIL_MODE
+        value: enabled
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false

@@ -74,9 +74,7 @@
       @for (item of resource.data()?.items; track item.id) {
         <article class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
-            <span class="badge bg-brand-soft text-brand">{{
-              item.status.replaceAll('_', ' ').toLowerCase()
-            }}</span
+            <span class="badge bg-brand-soft text-brand">{{ i18n.label(item.status) }}</span
             ><span class="text-[10px] text-muted">{{ item.createdAt | date: 'MMM d' }}</span>
           </div>
           <h3 class="text-sm font-semibold">{{ item.title }}</h3>
@@ -111,7 +109,7 @@
           @for (reply of item.replies; track reply.id) {
             <div class="mt-4 rounded-xl bg-mint p-4 text-xs leading-6 text-mint-ink">
               <p class="mb-1 text-[10px] font-semibold">
-                {{ i18n.t('LIFEQUEST TEAM', 'فريق رحلة التوازن') }}
+                {{ i18n.t('MIRHAL TEAM', 'فريق مِرحال') }}
               </p>
               {{ reply.body }}
             </div>

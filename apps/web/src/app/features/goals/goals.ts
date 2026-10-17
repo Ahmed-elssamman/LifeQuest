@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Milestones } from './milestones';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, Area, errorMessage, Goal, Page, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import {
   EmptyState,
   ErrorState,
@@ -19,7 +18,7 @@ import { applyServerValidation, FormField, DiscardChanges, UnsavedForm } from '@
   selector: 'lq-goals',
   imports: [
     Milestones,
-    DatePipe,
+    LocalizedDatePipe,
     ReactiveFormsModule,
     DialogModule,
     PageHeader,

@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Api, errorMessage, Profile } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { Avatar, Icon, PageHeader } from '@lifequest/ui';
 import { UnsavedForm, applyServerValidation, FormField } from '@lifequest/forms';
 @Component({
@@ -13,7 +12,7 @@ import { UnsavedForm, applyServerValidation, FormField } from '@lifequest/forms'
     UnsavedForm,
     Avatar,
     RouterLink,
-    DatePipe,
+    LocalizedDatePipe,
     ReactiveFormsModule,
     PageHeader,
     Icon,

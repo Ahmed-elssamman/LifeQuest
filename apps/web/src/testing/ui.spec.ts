@@ -2,17 +2,58 @@ import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { ErrorState, Progress, Skeleton } from '@lifequest/ui';
 import { FormField } from '@lifequest/forms';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { Celebrations } from '@lifequest/data-access';
 import { LevelCelebration } from '../../../../libs/ui/src/level-celebration';
+import { ActivityChart } from '../app/features/analytics/activity-chart';
 import { provideRouter } from '@angular/router';
 
 describe('Accessible shared components', () => {
+  it('localizes standard habit units while preserving custom units', () => {
+    const preferences = TestBed.inject(Preferences);
+    preferences.language.set('ar');
+    expect(preferences.habitUnit('times')).toBe('مرات');
+    expect(preferences.habitUnit('minutes')).toBe('دقائق');
+    expect(preferences.habitUnit('pages')).toBe('صفحات');
+    expect(preferences.habitUnit('steps')).toBe('steps');
+    preferences.language.set('en');
+    expect(preferences.habitUnit('مرات')).toBe('times');
+    expect(preferences.habitUnit('دقائق')).toBe('minutes');
+    expect(preferences.habitUnit('صفحات')).toBe('pages');
+  });
+  it('formats dates in the selected language without shifting date-only values', () => {
+    TestBed.configureTestingModule({ providers: [LocalizedDatePipe] });
+    const pipe = TestBed.inject(LocalizedDatePipe);
+    const preferences = TestBed.inject(Preferences);
+    preferences.language.set('ar');
+    const arabic = pipe.transform('2026-10-04', 'MMM d, y');
+    expect(arabic).not.toContain('Oct');
+    preferences.language.set('en');
+    expect(pipe.transform('2026-10-04', 'MMM d, y')).toContain('Oct 4, 2026');
+  });
+  it('localizes chart accessibility text in both directions', () => {
+    const fixture = TestBed.createComponent(ActivityChart);
+    fixture.componentRef.setInput('items', [{ date: '2026-10-04', habits: 1, checkIn: true }]);
+    const preferences = TestBed.inject(Preferences);
+    preferences.language.set('ar');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('svg').getAttribute('aria-label')).toContain(
+      'خطوات العادات',
+    );
+    preferences.language.set('en');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('svg').getAttribute('aria-label')).toContain(
+      'Habit actions',
+    );
+  });
   it('announces an earned level without a modal and allows dismissal', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(LevelCelebration);
     const state = TestBed.inject(Celebrations);
     state.receive({ levelUp: { number: 2, title: 'Finding rhythm', titleAr: 'مستمر' } });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role=status]').textContent).toContain('مستمر');
+    TestBed.inject(Preferences).language.set('en');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role=status]').textContent).toContain(
       'Finding rhythm',
@@ -33,6 +74,29 @@ describe('Accessible shared components', () => {
     fixture.componentRef.setInput('value', -20);
     fixture.detectChanges();
     expect(progress.getAttribute('aria-valuenow')).toBe('0');
+  });
+  it('uses localized accessible defaults for progress and loading', () => {
+    const preferences = TestBed.inject(Preferences);
+    preferences.language.set('ar');
+    const progress = TestBed.createComponent(Progress);
+    progress.detectChanges();
+    expect(
+      progress.nativeElement.querySelector('[role=progressbar]').getAttribute('aria-label'),
+    ).toBe('التقدم');
+    const skeleton = TestBed.createComponent(Skeleton);
+    skeleton.detectChanges();
+    expect(
+      skeleton.nativeElement.querySelector('[aria-busy=true]').getAttribute('aria-label'),
+    ).toBe('جارٍ التحميل');
+    preferences.language.set('en');
+    progress.detectChanges();
+    skeleton.detectChanges();
+    expect(
+      progress.nativeElement.querySelector('[role=progressbar]').getAttribute('aria-label'),
+    ).toBe('Progress');
+    expect(
+      skeleton.nativeElement.querySelector('[aria-busy=true]').getAttribute('aria-label'),
+    ).toBe('Loading');
   });
   it('emits retry from the accessible error state', () => {
     const fixture = TestBed.createComponent(ErrorState);
@@ -61,7 +125,11 @@ describe('Accessible shared components', () => {
     expect(fixture.nativeElement.querySelector('button')).toBeNull();
   });
   it('applies Arabic direction, theme and reduced motion', () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn() }));
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
     const preferences = TestBed.inject(Preferences);
     preferences.setLanguage('ar');
     preferences.setTheme('dark');

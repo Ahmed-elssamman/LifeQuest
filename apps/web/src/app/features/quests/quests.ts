@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import {
@@ -11,7 +10,7 @@ import {
   QuestTemplate,
   Toasts,
 } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import {
   Pagination,
   EmptyState,
@@ -26,7 +25,7 @@ import { applyServerValidation, FormField, DiscardChanges, UnsavedForm } from '@
   selector: 'lq-quests',
   imports: [
     Pagination,
-    DatePipe,
+    LocalizedDatePipe,
     ReactiveFormsModule,
     DialogModule,
     PageHeader,
@@ -49,6 +48,15 @@ export class QuestsPage {
   readonly i18n = inject(Preferences);
   readonly resource = this.api.resource<Page<Quest>>('quests');
   readonly templates = this.api.resource<QuestTemplate[]>('quest-templates');
+  readonly visibleTemplates = computed(() =>
+    this.i18n.language() === 'en'
+      ? (this.templates.data() ?? [])
+      : (this.templates.data() ?? []).filter(
+          (template) =>
+            (!template.description || Boolean(template.descriptionAr.trim())) &&
+            template.items.every((item) => Boolean(item.titleAr.trim())),
+        ),
+  );
   readonly areas = this.api.resource<Area[]>('life-areas');
   readonly open = signal(false);
   readonly busy = signal('');
@@ -87,10 +95,10 @@ export class QuestsPage {
     if (!this.open()) return;
     this.form.patchValue({
       title: this.i18n.t(template.title, template.titleAr),
-      description: template.description,
+      description: this.i18n.t(template.description, template.descriptionAr),
       areaId: template.areaId,
       difficulty: template.difficulty,
-      items: template.items.map((item) => item.title).join('\n'),
+      items: template.items.map((item) => this.i18n.t(item.title, item.titleAr)).join('\n'),
     });
   }
   page(page: number) {

@@ -1,11 +1,10 @@
 import { Milestones } from '../goals/milestones';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, errorMessage, Goal, Page, Project, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import {
   EmptyState,
   ErrorState,
@@ -21,7 +20,7 @@ import { applyServerValidation, FormField, DiscardChanges, UnsavedForm } from '@
   imports: [
     Milestones,
     RouterLink,
-    DatePipe,
+    LocalizedDatePipe,
     ReactiveFormsModule,
     DialogModule,
     PageHeader,

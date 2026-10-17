@@ -36,35 +36,52 @@ export class AdminQuestsPage {
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2)]],
     titleAr: ['', [Validators.required, Validators.minLength(2)]],
-    description: [''],
+    description: ['', Validators.required],
+    descriptionAr: ['', Validators.required],
     areaId: ['', Validators.required],
     difficulty: ['MEDIUM'],
     active: [true],
     items: ['', Validators.required],
+    itemsAr: ['', Validators.required],
   });
   edit(item?: QuestTemplate) {
     this.editing.set(item ?? null);
     this.error.set('');
     this.form.reset(
       item
-        ? { ...item, items: item.items.map((step) => step.title).join('\n') }
+        ? {
+            ...item,
+            items: item.items.map((step) => step.title).join('\n'),
+            itemsAr: item.items.map((step) => step.titleAr).join('\n'),
+          }
         : { areaId: this.areas.data()?.[0]?.id ?? '', difficulty: 'MEDIUM', active: true },
     );
     this.open.set(true);
   }
   async save() {
     if (this.form.invalid || this.saving()) return;
+    const value = this.form.getRawValue();
+    const items = value.items
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const itemsAr = value.itemsAr
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (items.length !== itemsAr.length) {
+      this.error.set(
+        this.i18n.t(
+          'Add one Arabic step for each English step.',
+          'أضف خطوة عربية مقابل كل خطوة إنجليزية.',
+        ),
+      );
+      return;
+    }
     this.saving.set(true);
     this.error.set('');
     try {
-      const value = this.form.getRawValue();
-      const input = {
-        ...value,
-        items: value.items
-          .split('\n')
-          .map((item) => item.trim())
-          .filter(Boolean),
-      };
+      const input = { ...value, items, itemsAr };
       const editing = this.editing();
       if (editing) await this.api.patch(`admin/quest-templates/${editing.id}`, input);
       else await this.api.post('admin/quest-templates', input);

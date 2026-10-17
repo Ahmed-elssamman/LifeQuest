@@ -22,7 +22,7 @@ const positive = z.number().finite().positive().max(1_000_000);
 const priority = z.enum(['LOW', 'MEDIUM', 'HIGH']);
 const status = z.enum(['PLANNED', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED']);
 export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(1_000_000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
   search: z.string().max(160).optional(),
   status: z.string().max(40).optional(),
@@ -44,6 +44,7 @@ export const registerSchema = z
       .transform((value) => value.toLowerCase()),
     password: z.string().min(12).max(128),
     displayName: title,
+    language: z.enum(['ar', 'en']).default('ar'),
     timezone: z
       .string()
       .max(80)
@@ -225,13 +226,28 @@ export const questSchema = z
 export const rewardSchema = z
   .object({
     title,
+    titleAr: text.default(''),
     description: text.default(''),
+    descriptionAr: text.default(''),
     cost: z.number().int().min(50).max(100000),
     icon: z.string().max(30).default('gift'),
     category: z.string().max(40).default('personal'),
+    categoryAr: z.string().max(40).default(''),
+    cooldownDays: z.number().int().min(0).max(365).default(0),
+    contexts: z
+      .array(z.enum(['morning', 'afternoon', 'evening']))
+      .max(3)
+      .default([]),
     redemptionLimit: z.number().int().min(1).max(1000).nullish(),
     notes: text.default(''),
   })
+  .strict();
+export const rewardUpdateSchema = patchSchema(rewardSchema).extend({
+  active: z.boolean().optional(),
+});
+export const rewardRatingSchema = z.object({ rating: z.number().int().min(1).max(5) }).strict();
+export const rewardSavingsSchema = z
+  .object({ targetXp: z.number().int().min(50).max(100000).optional() })
   .strict();
 export const redeemSchema = z.object({ idempotencyKey: z.uuid() }).strict();
 export const challengeSchema = z
@@ -285,12 +301,18 @@ export const questTemplateSchema = z
     title,
     titleAr: title,
     description: text.default(''),
+    descriptionAr: text.default(''),
     areaId: id,
     difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
     active: z.boolean().default(true),
     items: z.array(title).min(1).max(12),
+    itemsAr: z.array(title).max(12).optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => !value.itemsAr || value.itemsAr.length === value.items.length, {
+    path: ['itemsAr'],
+    message: 'Provide one Arabic step for each English step.',
+  });
 
 export const journeyQuerySchema = z
   .object({

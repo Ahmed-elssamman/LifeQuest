@@ -1,16 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, Page, Toasts } from '@lifequest/data-access';
 import { AuthStore } from '@lifequest/auth';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { EmptyState, ErrorState, Icon, PageHeader, Pagination, Skeleton } from '@lifequest/ui';
 import { AdminChallenge } from '../../models';
 @Component({
   selector: 'lq-admin-challenges',
   imports: [
-    DatePipe,
+    LocalizedDatePipe,
     FormsModule,
     DialogModule,
     PageHeader,

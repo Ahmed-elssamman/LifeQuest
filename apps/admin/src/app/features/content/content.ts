@@ -10,8 +10,11 @@ import { catalogs } from './catalogs';
 type CatalogItem = {
   id: string;
   title: string;
+  titleAr?: string;
   description?: string;
+  descriptionAr?: string;
   body?: string;
+  bodyAr?: string;
   active?: boolean;
   published?: boolean;
   cost?: number;
@@ -46,6 +49,15 @@ export class AdminContentPage {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly form = new FormRecord<FormControl<string | number | boolean>>({});
+  displayTitle(item: CatalogItem) {
+    return this.i18n.t(item.title, item.titleAr || 'ترجمة العنوان غير متاحة بعد.');
+  }
+  displaySummary(item: CatalogItem) {
+    return this.i18n.t(
+      item.description || item.body || '',
+      item.descriptionAr || item.bodyAr || 'الترجمة العربية غير متاحة بعد.',
+    );
+  }
   constructor() {
     for (const field of this.definition.fields)
       this.form.addControl(

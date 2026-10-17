@@ -117,13 +117,16 @@ const icons = {
   selector: 'lq-icon',
   imports: [LucideAngularModule],
   template:
-    '<lucide-icon [img]="icon()" [size]="size()" [strokeWidth]="1.7" aria-hidden="true" class="block" />',
+    '<lucide-icon [img]="icon()" [size]="size()" [strokeWidth]="1.7" aria-hidden="true" [class]="horizontal() ? \'block rtl:rotate-180\' : \'block\'" />',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'inline-flex shrink-0 align-middle' },
 })
 export class Icon {
   readonly name = input('circle');
   readonly size = input(20);
+  horizontal() {
+    return ['arrow-left', 'arrow-right', 'chevron-right'].includes(this.name());
+  }
   icon() {
     return icons[this.name() as keyof typeof icons] ?? Circle;
   }

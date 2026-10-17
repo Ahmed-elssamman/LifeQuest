@@ -1,15 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, errorMessage, Feedback, Page, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { EmptyState, ErrorState, PageHeader, Pagination, Skeleton } from '@lifequest/ui';
 import { applyServerValidation, FormField } from '@lifequest/forms';
 @Component({
   selector: 'lq-admin-feedback',
   imports: [
-    DatePipe,
+    LocalizedDatePipe,
     FormsModule,
     ReactiveFormsModule,
     DialogModule,

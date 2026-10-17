@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Api, Dashboard, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import {
   ErrorState,
   HabitRow,
@@ -17,7 +16,7 @@ import {
   selector: 'lq-dashboard',
   imports: [
     RouterLink,
-    DatePipe,
+    LocalizedDatePipe,
     Icon,
     ErrorState,
     Skeleton,
@@ -36,7 +35,18 @@ export class DashboardPage {
   readonly i18n = inject(Preferences);
   readonly resource = this.api.resource<Dashboard>('dashboard');
   readonly announcements =
-    this.api.resource<{ id: string; title: string; body: string }[]>('announcements');
+    this.api.resource<
+      { id: string; title: string; titleAr: string; body: string; bodyAr: string }[]
+    >('announcements');
+  readonly visibleAnnouncements = computed(() =>
+    (this.announcements.data() ?? [])
+      .filter(
+        (announcement) =>
+          this.i18n.language() === 'en' ||
+          (Boolean(announcement.titleAr.trim()) && Boolean(announcement.bodyAr.trim())),
+      )
+      .slice(0, 1),
+  );
   readonly busy = signal('');
   readonly firstName = computed(
     () => this.resource.data()?.profile.displayName.split(' ')[0] ?? '',
