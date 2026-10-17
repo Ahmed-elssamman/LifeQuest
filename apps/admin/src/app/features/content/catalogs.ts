@@ -5,7 +5,7 @@ export interface CatalogField {
   kind: 'text' | 'textarea' | 'number' | 'checkbox' | 'select';
   value: string | number | boolean;
   required?: boolean;
-  options?: string[];
+  options?: { value: string; label: string; ar: string }[];
 }
 export interface CatalogDefinition {
   title: string;
@@ -47,7 +47,23 @@ export const catalogs: Record<string, CatalogDefinition> = {
     icon: 'gift',
     fields: [
       title,
+      {
+        key: 'titleAr',
+        label: 'Arabic title',
+        ar: 'العنوان بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
       description,
+      {
+        key: 'descriptionAr',
+        label: 'Arabic description',
+        ar: 'الوصف بالعربية',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
       {
         key: 'cost',
         label: 'XP cost',
@@ -62,9 +78,24 @@ export const catalogs: Record<string, CatalogDefinition> = {
         ar: 'الأيقونة',
         kind: 'select',
         value: 'gift',
-        options: ['gift', 'coffee', 'book-open', 'clapperboard', 'sun', 'heart'],
+        options: [
+          { value: 'gift', label: 'Gift', ar: 'هدية' },
+          { value: 'coffee', label: 'Coffee', ar: 'قهوة' },
+          { value: 'book-open', label: 'Book', ar: 'كتاب' },
+          { value: 'clapperboard', label: 'Film', ar: 'فيلم' },
+          { value: 'sun', label: 'Sun', ar: 'شمس' },
+          { value: 'heart', label: 'Heart', ar: 'قلب' },
+        ],
       },
       { key: 'category', label: 'Category', ar: 'الفئة', kind: 'text', value: 'personal' },
+      {
+        key: 'categoryAr',
+        label: 'Arabic category',
+        ar: 'الفئة بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
     ],
   },
   achievements: {
@@ -93,12 +124,27 @@ export const catalogs: Record<string, CatalogDefinition> = {
       },
       description,
       {
+        key: 'descriptionAr',
+        label: 'Arabic description',
+        ar: 'الوصف بالعربية',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
+      {
         key: 'icon',
         label: 'Icon',
         ar: 'الأيقونة',
         kind: 'select',
         value: 'award',
-        options: ['award', 'flame', 'sprout', 'sun', 'users', 'flag'],
+        options: [
+          { value: 'award', label: 'Award', ar: 'جائزة' },
+          { value: 'flame', label: 'Flame', ar: 'شعلة' },
+          { value: 'sprout', label: 'Sprout', ar: 'نبتة' },
+          { value: 'sun', label: 'Sun', ar: 'شمس' },
+          { value: 'users', label: 'People', ar: 'أشخاص' },
+          { value: 'flag', label: 'Flag', ar: 'علم' },
+        ],
       },
       {
         key: 'condition',
@@ -106,7 +152,12 @@ export const catalogs: Record<string, CatalogDefinition> = {
         ar: 'شرط الاكتساب',
         kind: 'select',
         value: 'HABIT_COUNT',
-        options: ['HABIT_COUNT', 'CHECK_IN_COUNT', 'QUEST_COUNT', 'CHALLENGE_COUNT'],
+        options: [
+          { value: 'HABIT_COUNT', label: 'Completed habits', ar: 'العادات المكتملة' },
+          { value: 'CHECK_IN_COUNT', label: 'Recorded check-ins', ar: 'المراجعات اليومية المسجلة' },
+          { value: 'QUEST_COUNT', label: 'Completed quests', ar: 'المهام الأسبوعية المكتملة' },
+          { value: 'CHALLENGE_COUNT', label: 'Completed challenges', ar: 'التحديات المكتملة' },
+        ],
       },
       {
         key: 'threshold',
@@ -178,17 +229,33 @@ export const catalogs: Record<string, CatalogDefinition> = {
     ],
   },
   announcements: {
-    title: 'A little news from LifeQuest.',
-    ar: 'قليل من أخبار رحلة التوازن.',
+    title: 'A little news from MIRHAL.',
+    ar: 'قليل من أخبار مِرحال.',
     description: 'Share product updates and thoughtful announcements.',
     arDescription: 'شارك تحديثات المنتج والإعلانات المدروسة.',
     icon: 'bell',
     fields: [
       title,
       {
+        key: 'titleAr',
+        label: 'Arabic title',
+        ar: 'العنوان بالعربية',
+        kind: 'text',
+        value: '',
+        required: true,
+      },
+      {
         key: 'body',
         label: 'Announcement',
         ar: 'الإعلان',
+        kind: 'textarea',
+        value: '',
+        required: true,
+      },
+      {
+        key: 'bodyAr',
+        label: 'Arabic announcement',
+        ar: 'الإعلان بالعربية',
         kind: 'textarea',
         value: '',
         required: true,

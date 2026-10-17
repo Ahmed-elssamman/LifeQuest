@@ -1,16 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { Api, errorMessage, Goal, Page, Project, Task, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { EmptyState, ErrorState, Icon, PageHeader, Pagination, Skeleton } from '@lifequest/ui';
 import { applyServerValidation, FormField, DiscardChanges, UnsavedForm } from '@lifequest/forms';
 @Component({
   selector: 'lq-tasks',
   imports: [
-    DatePipe,
+    LocalizedDatePipe,
     FormsModule,
     ReactiveFormsModule,
     DialogModule,

@@ -40,6 +40,12 @@ export class Api {
       },
     );
   }
+  put<T>(path: string, body: unknown = {}) {
+    return firstValueFrom(this.http.put<T>(`/api/${path}`, body, { withCredentials: true }));
+  }
+  delete<T>(path: string) {
+    return firstValueFrom(this.http.delete<T>(`/api/${path}`, { withCredentials: true }));
+  }
   resource<T>(path: string) {
     const resource = new Remote<T>(this, path);
     void resource.load();

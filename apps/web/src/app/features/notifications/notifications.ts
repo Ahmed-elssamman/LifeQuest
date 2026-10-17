@@ -1,15 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Api, Page, Notification, Toasts } from '@lifequest/data-access';
-import { Preferences } from '@lifequest/utilities';
+import { LocalizedDatePipe, Preferences } from '@lifequest/utilities';
 import { Pagination, EmptyState, ErrorState, Icon, PageHeader, Skeleton } from '@lifequest/ui';
 @Component({
   selector: 'lq-notifications',
   imports: [
     Pagination,
     RouterLink,
-    DatePipe,
+    LocalizedDatePipe,
     PageHeader,
     Pagination,
     EmptyState,
@@ -63,7 +62,10 @@ import { Pagination, EmptyState, ErrorState, Icon, PageHeader, Skeleton } from '
               </p>
             </div>
             @if (!item.readAt) {
-              <span class="mt-2 size-2 shrink-0 rounded-full bg-brand" aria-label="Unread"></span>
+              <span
+                class="mt-2 size-2 shrink-0 rounded-full bg-brand"
+                [attr.aria-label]="i18n.t('Unread', 'غير مقروء')"
+              ></span>
             }
           </a>
         } @empty {

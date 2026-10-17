@@ -12,6 +12,7 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
+      reportsDirectory: 'coverage/domain',
       include: ['libs/domain/src/**/*.ts', 'libs/contracts/src/**/*.ts'],
       exclude: ['libs/domain/src/index.ts'],
       thresholds: { lines: 80, functions: 80, statements: 80, branches: 70 },

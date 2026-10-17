@@ -34,7 +34,9 @@ beforeAll(async () => {
     env: process.env,
     stdio: 'pipe',
   });
-  app = configureApp(await NestFactory.create(AppModule, { logger: false, bodyParser: false }));
+  app = configureApp(
+    await NestFactory.create(AppModule, { logger: false, bodyParser: false, abortOnError: false }),
+  );
   await app.init();
   db = app.get(Database);
   await seed(db);

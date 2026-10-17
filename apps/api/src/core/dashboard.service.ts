@@ -55,7 +55,10 @@ export class DashboardService {
           userId: user.id,
           ...(historical ? { startDate: { lte: today } } : { status: 'ACTIVE' as const }),
         },
-        include: { area: true, logs: { where: { date: { gte: start, lt: exclusiveEnd } } } },
+        include: {
+          area: true,
+          logs: { where: { date: { gte: start, lt: exclusiveEnd } }, select: { date: true } },
+        },
       }),
       this.db.goal.findMany({
         where: {
@@ -82,6 +85,7 @@ export class DashboardService {
           userId: user.id,
           status: { in: ['PLANNED', 'ACTIVE'] },
           OR: [{ dueDate: { lte: today } }, { dueDate: null }],
+          AND: [{ OR: [{ startDate: null }, { startDate: { lte: today } }] }],
         },
         orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         take: 5,
@@ -114,7 +118,7 @@ export class DashboardService {
       }),
       this.db.$queryRaw<
         { amount: number }[]
-      >`SELECT COALESCE(SUM(amount),0)::float AS amount FROM "XPTransaction" WHERE "userId"=${user.id} AND direction='CREDIT' AND type<>'REWARD' AND ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${user.timezone})::date >= ${start}::date AND ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${user.timezone})::date < ${exclusiveEnd}::date`,
+      >`SELECT COALESCE(SUM(amount),0)::float AS amount FROM "XPTransaction" WHERE "userId"=${user.id} AND direction='CREDIT' AND type<>'REWARD' AND ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${user.timezone})::date >= ${start.toISOString().slice(0, 10)}::date AND ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${user.timezone})::date < ${exclusiveEnd.toISOString().slice(0, 10)}::date`,
     ]);
     const mean = (numbers: number[]) =>
       numbers.length ? numbers.reduce((a, b) => a + b, 0) / numbers.length : 0;
@@ -184,7 +188,21 @@ export class DashboardService {
       xp,
       journey: score,
       areas: areaProgress,
-      habits: habitScores.filter((habit) => habit.scheduledToday).slice(0, 8),
+      habits: habitScores
+        .filter((habit) => habit.scheduledToday)
+        .slice(0, 8)
+        .map((habit) => ({
+          id: habit.id,
+          name: habit.name,
+          area: habit.area,
+          target: habit.target,
+          unit: habit.unit,
+          xpReward: habit.xpReward,
+          completedToday: habit.completedToday,
+          adherence: habit.adherence,
+          streak: habit.streak,
+          scheduledToday: habit.scheduledToday,
+        })),
       habitCount: habits.length,
       completedHabits: habitScores.filter((habit) => habit.completedToday).length,
       tasks,

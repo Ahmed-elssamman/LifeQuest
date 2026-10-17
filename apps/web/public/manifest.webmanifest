@@ -1,7 +1,7 @@
 {
-  "name": "LifeQuest · رحلة التوازن",
-  "short_name": "LifeQuest",
-  "start_url": "/dashboard",
+  "name": "MIRHAL · مِرحال",
+  "short_name": "MIRHAL",
+  "start_url": "/today",
   "display": "standalone",
   "background_color": "#f6f7fb",
   "theme_color": "#6b57cd",

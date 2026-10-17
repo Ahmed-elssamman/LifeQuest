@@ -17,7 +17,7 @@
       {{ i18n.t('YOURS TO ENJOY', 'لك لتستمتع') }}
     </p>
     <p class="mt-2 text-3xl font-semibold">
-      {{ xp.data()?.balance ?? 0 }} <span class="text-sm font-normal text-[#c7bafa]">XP</span>
+      {{ xp.data()?.balance ?? '…' }} <span class="text-sm font-normal text-[#c7bafa]">XP</span>
     </p>
   </div>
   <div class="max-w-48 text-end">
@@ -33,6 +33,78 @@
     </p>
   </div>
 </div>
+@if (xp.error()) {
+  <div class="mb-6"><lq-error [message]="xp.error()" (retry)="xp.load()" /></div>
+}
+@if (recommendations.error()) {
+  <div class="mb-6">
+    <lq-error [message]="recommendations.error()" (retry)="recommendations.load()" />
+  </div>
+}
+@if (recommendations.data()?.length) {
+  <section class="mb-7" aria-labelledby="reward-suggestions-heading">
+    <h2 id="reward-suggestions-heading" class="mb-3 text-lg font-semibold">
+      {{ i18n.t('A few ideas for you', 'أفكار قد تعجبك') }}
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      @for (item of recommendations.data(); track item.reward.id) {
+        <div class="card p-4">
+          <p class="font-medium">{{ rewardTitle(item.reward) }} · {{ item.reward.cost }} XP</p>
+          <p class="mt-1 text-xs text-muted">{{ recommendationReason(item) }}</p>
+          <button class="btn btn-quiet mt-2 text-xs" (click)="saveFor(item.reward)">
+            {{ i18n.t('Save for this', 'ادخر لها') }}
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+}
+@if (savings.error()) {
+  <div class="mb-6"><lq-error [message]="savings.error()" (retry)="savings.load()" /></div>
+}
+@if (savings.data()?.items?.length) {
+  <section class="mb-7" aria-labelledby="reward-savings-heading">
+    <h2 id="reward-savings-heading" class="mb-3 text-lg font-semibold">
+      {{ i18n.t('Saving for something', 'تدخر لشيء جميل') }}
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      @for (item of savings.data()?.items; track item.rewardId) {
+        <div class="card p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="font-medium">{{ rewardTitle(item.reward) }}</p>
+            <button class="btn btn-quiet text-xs" (click)="removeSaving(item.rewardId)">
+              {{ i18n.t('Remove goal', 'إزالة الهدف') }}
+            </button>
+          </div>
+          <progress
+            class="mt-3 w-full"
+            [value]="item.currentXp"
+            [max]="item.targetXp"
+            [attr.aria-label]="rewardTitle(item.reward)"
+          ></progress>
+          <p class="text-xs text-muted">
+            {{ item.currentXp }} / {{ item.targetXp }} XP ·
+            {{
+              item.status === 'READY'
+                ? i18n.t('Ready when you are', 'جاهزة عندما تريد')
+                : item.status === 'UNAVAILABLE'
+                  ? i18n.t('Currently unavailable', 'غير متاحة حالياً')
+                  : i18n.t('Every step counts', 'كل خطوة مهمة')
+            }}
+          </p>
+        </div>
+      }
+    </div>
+  </section>
+}
+@if (savings.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="savingsPage($event)"
+  />
+}
 @if (resource.loading() && !resource.data()) {
   <lq-skeleton />
 } @else if (resource.error()) {
@@ -48,9 +120,30 @@
           /></span>
         </div>
         <div class="flex flex-1 flex-col p-5">
-          <p class="eyebrow text-[9px]">{{ reward.category }}</p>
-          <h2 class="mt-2 text-base font-semibold">{{ reward.title }}</h2>
-          <p class="mb-5 mt-2 text-xs leading-6 text-muted">{{ reward.description }}</p>
+          <p class="eyebrow text-[9px]">{{ rewardCategory(reward) }}</p>
+          <h2 class="mt-2 text-base font-semibold">{{ rewardTitle(reward) }}</h2>
+          <p class="mb-5 mt-2 text-xs leading-6 text-muted">{{ rewardDescription(reward) }}</p>
+          <div class="mb-4 flex flex-wrap gap-2">
+            <button
+              class="btn btn-quiet text-xs"
+              [attr.aria-pressed]="!!reward.favorite"
+              (click)="favorite(reward)"
+            >
+              {{
+                reward.favorite
+                  ? i18n.t('★ Favorite', '★ مفضلة')
+                  : i18n.t('☆ Favorite', '☆ أضف للمفضلة')
+              }}
+            </button>
+            <button class="btn btn-quiet text-xs" (click)="saveFor(reward)">
+              {{ i18n.t('Save for this', 'ادخر لها') }}
+            </button>
+            @if (reward.userId) {
+              <button class="btn btn-quiet text-xs" (click)="edit(reward)">
+                {{ i18n.t('Edit', 'تعديل') }}
+              </button>
+            }
+          </div>
           <div class="mt-auto">
             <p class="mb-4 flex items-center gap-1.5 text-sm font-semibold text-brand">
               <lq-icon name="zap" [size]="15" />{{ reward.cost }} XP
@@ -100,38 +193,94 @@
 }
 <section class="mt-9">
   <lq-section-title [title]="i18n.t('Little joys you’ve earned', 'أفراح صغيرة استحققتها')" />
-  <div class="card divide-y divide-line">
-    @for (item of history.data()?.items; track item.id) {
-      <div class="flex items-center gap-3 p-4">
-        <span class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
-          ><lq-icon [name]="item.reward.icon" [size]="19"
-        /></span>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs font-medium">{{ item.reward.title }}</p>
-          <p class="mt-1 text-[10px] text-muted">{{ item.createdAt | date: 'MMM d, h:mm a' }}</p>
+  @if (history.loading() && !history.data()) {
+    <lq-skeleton />
+  } @else if (history.error()) {
+    <lq-error [message]="history.error()" (retry)="history.load()" />
+  } @else {
+    <div class="card divide-y divide-line">
+      @for (item of history.data()?.items; track item.id) {
+        <div class="flex flex-wrap items-center gap-3 p-4">
+          <span class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
+            ><lq-icon [name]="item.reward.icon" [size]="19"
+          /></span>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-medium">{{ rewardTitle(item.reward) }}</p>
+            <p class="mt-1 text-[10px] text-muted">{{ item.createdAt | date: 'MMM d, h:mm a' }}</p>
+          </div>
+          <span class="text-xs text-muted">{{
+            item.refundedAt ? i18n.t('Returned', 'أُعيدت') : '−' + item.costSnapshot + ' XP'
+          }}</span>
+          @if (refundable(item)) {
+            <button class="btn btn-quiet text-xs" (click)="refund(item.id)">
+              {{ i18n.t('Undo', 'تراجع') }}
+            </button>
+          }
+          @if (!item.refundedAt) {
+            <label class="text-xs text-muted">
+              {{ i18n.t('How was it?', 'كيف كانت؟') }}
+              <select
+                class="field mt-1"
+                [value]="item.rating ?? ''"
+                (change)="rateSelected(item, $event)"
+              >
+                <option value="" disabled>{{ i18n.t('Optional', 'اختياري') }}</option>
+                <option value="5">{{ i18n.t('Loved it', 'أحببتها') }}</option>
+                <option value="4">{{ i18n.t('Good', 'جيدة') }}</option>
+                <option value="3">{{ i18n.t('Okay', 'عادية') }}</option>
+                <option value="2">{{ i18n.t('Not really', 'ليست تماماً') }}</option>
+                <option value="1">{{ i18n.t('Did not enjoy it', 'لم أستمتع بها') }}</option>
+              </select>
+            </label>
+          }
         </div>
-        <span class="text-xs text-muted">{{
-          item.refundedAt ? i18n.t('Returned', 'أُعيدت') : '−' + item.costSnapshot + ' XP'
-        }}</span>
-        @if (refundable(item)) {
-          <button class="btn btn-quiet text-xs" (click)="refund(item.id)">
-            {{ i18n.t('Undo', 'تراجع') }}
-          </button>
-        }
-      </div>
-    } @empty {
-      <p class="p-6 text-xs leading-6 text-muted">
-        {{
-          i18n.t(
-            'Your first reward is waiting. Every small step brings it closer.',
-            'مكافأتك الأولى
+      } @empty {
+        <p class="p-6 text-xs leading-6 text-muted">
+          {{
+            i18n.t(
+              'Your first reward is waiting. Every small step brings it closer.',
+              'مكافأتك الأولى
       تنتظرك. كل خطوة صغيرة تقربها.'
-          )
-        }}
-      </p>
-    }
-  </div>
+            )
+          }}
+        </p>
+      }
+    </div>
+  }
 </section>
+@if (mine.error()) {
+  <div class="mt-6"><lq-error [message]="mine.error()" (retry)="mine.load()" /></div>
+}
+@if (mine.data()?.items?.length) {
+  <section class="mt-9" aria-labelledby="personal-rewards-heading">
+    <h2 id="personal-rewards-heading" class="mb-3 text-lg font-semibold">
+      {{ i18n.t('Your personal rewards', 'مكافآتك الشخصية') }}
+    </h2>
+    <div class="card divide-y divide-line">
+      @for (reward of mine.data()?.items; track reward.id) {
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4">
+          <span class="text-sm">{{ rewardTitle(reward) }} · {{ reward.cost }} XP</span>
+          <div class="flex gap-2">
+            <button class="btn btn-quiet text-xs" (click)="edit(reward)">
+              {{ i18n.t('Edit', 'تعديل') }}
+            </button>
+            <button class="btn btn-quiet text-xs" (click)="setActive(reward)">
+              {{ reward.active ? i18n.t('Pause', 'إيقاف مؤقت') : i18n.t('Activate', 'تفعيل') }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+}
+@if (mine.data(); as page) {
+  <lq-pagination
+    [page]="page.page"
+    [total]="page.total"
+    [limit]="page.limit"
+    (change)="minePage($event)"
+  />
+}
 @if (history.data(); as page) {
   <lq-pagination
     [page]="page.page"
@@ -162,6 +311,36 @@
       [label]="i18n.t('XP cost (minimum 50)', 'التكلفة (50 نقطة على الأقل)')"
       ><input id="reward-cost" class="field" type="number" min="50" formControlName="cost"
     /></lq-field>
+    <lq-field id="reward-category" [label]="i18n.t('What kind of reward?', 'ما نوع المكافأة؟')">
+      <select id="reward-category" class="field" formControlName="category">
+        <option value="personal">{{ i18n.t('Personal', 'شخصية') }}</option>
+        <option value="drinks">{{ i18n.t('Drinks', 'مشروبات') }}</option>
+        <option value="food">{{ i18n.t('Food', 'طعام') }}</option>
+        <option value="movies">{{ i18n.t('Movies', 'أفلام') }}</option>
+        <option value="gaming">{{ i18n.t('Gaming', 'ألعاب') }}</option>
+        <option value="books">{{ i18n.t('Books', 'كتب') }}</option>
+        <option value="shopping">{{ i18n.t('Shopping', 'تسوق') }}</option>
+        <option value="outings">{{ i18n.t('Outings', 'خروجات') }}</option>
+        <option value="entertainment">{{ i18n.t('Entertainment', 'ترفيه') }}</option>
+        <option value="relaxation">{{ i18n.t('Relaxation', 'استرخاء') }}</option>
+        <option value="experiences">{{ i18n.t('Experiences', 'تجارب') }}</option>
+        <option value="technology">{{ i18n.t('Technology', 'تقنية') }}</option>
+        <option value="fashion">{{ i18n.t('Fashion', 'أزياء') }}</option>
+      </select>
+    </lq-field>
+    <lq-field
+      id="reward-cooldown"
+      [label]="i18n.t('Days before you can choose it again', 'أيام قبل اختيارها مجدداً')"
+    >
+      <input
+        id="reward-cooldown"
+        class="field"
+        type="number"
+        min="0"
+        max="365"
+        formControlName="cooldownDays"
+      />
+    </lq-field>
     @if (error()) {
       <p role="alert" class="mb-4 text-sm text-rose-600">{{ error() }}</p>
     }

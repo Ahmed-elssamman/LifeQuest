@@ -21,10 +21,12 @@
       <article class="card p-6">
         <p class="eyebrow">{{ i18n.t(item.area.name, item.area.nameAr) }}</p>
         <h2 class="mt-3 text-lg font-semibold">{{ i18n.t(item.title, item.titleAr) }}</h2>
-        <p class="mt-2 text-xs leading-6 text-muted">{{ item.description }}</p>
+        <p class="mt-2 text-xs leading-6 text-muted">
+          {{ i18n.t(item.description, item.descriptionAr || 'تحتاج هذه الفقرة إلى ترجمة عربية.') }}
+        </p>
         <ol class="my-4 list-inside list-decimal space-y-2 text-xs text-muted">
           @for (step of item.items; track step.id) {
-            <li>{{ step.title }}</li>
+            <li>{{ i18n.t(step.title, step.titleAr || 'تحتاج هذه الخطوة إلى ترجمة عربية.') }}</li>
           }
         </ol>
         <div class="flex items-center justify-between gap-2">
@@ -62,8 +64,19 @@
       ><input id="template-title" class="field" formControlName="title" /></lq-field
     ><lq-field id="template-ar" [label]="i18n.t('Arabic title', 'العنوان بالعربية')"
       ><input id="template-ar" dir="rtl" class="field" formControlName="titleAr" /></lq-field
-    ><lq-field id="template-description" [label]="i18n.t('Why it matters', 'لماذا يهم')">
+    ><lq-field
+      id="template-description"
+      [label]="i18n.t('English description', 'الوصف بالإنجليزية')"
+    >
       <textarea id="template-description" class="field" formControlName="description"></textarea>
+    </lq-field>
+    <lq-field id="template-description-ar" [label]="i18n.t('Arabic description', 'الوصف بالعربية')">
+      <textarea
+        id="template-description-ar"
+        dir="rtl"
+        class="field"
+        formControlName="descriptionAr"
+      ></textarea>
     </lq-field>
     <div class="grid gap-4 sm:grid-cols-2">
       <lq-field id="template-area" [label]="i18n.t('Life area', 'مجال الحياة')"
@@ -80,12 +93,26 @@
         </select></lq-field
       >
     </div>
-    <lq-field id="template-items" [label]="i18n.t('One step per line', 'خطوة في كل سطر')">
+    <lq-field
+      id="template-items"
+      [label]="i18n.t('English steps, one per line', 'الخطوات بالإنجليزية، خطوة في كل سطر')"
+    >
       <textarea
         id="template-items"
         class="field"
         rows="5"
         formControlName="items"
+      ></textarea></lq-field
+    ><lq-field
+      id="template-items-ar"
+      [label]="i18n.t('Arabic steps in the same order', 'الخطوات بالعربية بالترتيب نفسه')"
+    >
+      <textarea
+        id="template-items-ar"
+        dir="rtl"
+        class="field"
+        rows="5"
+        formControlName="itemsAr"
       ></textarea></lq-field
     ><label class="mb-5 flex min-h-11 items-center gap-3 text-sm"
       ><input type="checkbox" formControlName="active" class="accent-brand" />{{

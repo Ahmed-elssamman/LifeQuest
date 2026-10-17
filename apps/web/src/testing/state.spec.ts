@@ -67,6 +67,38 @@ describe('HTTP state and race handling', () => {
       document.documentElement.lang = language;
     }
   });
+  it('preserves specific authentication and recovery guidance in Arabic', () => {
+    const language = document.documentElement.lang;
+    document.documentElement.lang = 'ar';
+    try {
+      expect(
+        errorMessage(
+          new HttpErrorResponse({
+            status: 401,
+            error: { message: 'Email or password is incorrect.' },
+          }),
+        ),
+      ).toBe('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      expect(
+        errorMessage(
+          new HttpErrorResponse({
+            status: 400,
+            error: { message: 'This link has expired or has already been used.' },
+          }),
+        ),
+      ).toBe('انتهت صلاحية هذا الرابط أو استُخدم بالفعل.');
+      expect(
+        errorMessage(
+          new HttpErrorResponse({
+            status: 400,
+            error: { message: 'This invitation is no longer active.' },
+          }),
+        ),
+      ).toBe('هذه الدعوة لم تعد نشطة.');
+    } finally {
+      document.documentElement.lang = language;
+    }
+  });
   it('shows only server-reported level transitions and keeps duplicate actions quiet', async () => {
     const api = TestBed.inject(Api);
     const celebrations = TestBed.inject(Celebrations);

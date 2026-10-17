@@ -4,6 +4,10 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 
 config({ quiet: true });
+if (process.env['VERCEL_API_ORIGIN'])
+  throw new Error(
+    'Split Render deployment uses Vercel as a static frontend. Do not run this legacy API configuration script.',
+  );
 for (const key of ['DATABASE_URL', 'VERCEL_WEB_ORIGIN', 'VERCEL_ADMIN_ORIGIN'])
   if (!process.env[key]) throw new Error(`Missing ${key}`);
 if (!process.env['CRON_SECRET']) {
